@@ -45,6 +45,7 @@ import java.util.logging.Logger;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 /**
  *
@@ -54,6 +55,7 @@ public class Escritorio extends JFrame {
 
     private JDesktopPane escritorio = new JDesktopPane();
     private JInternalFrame ventanaCarpeta = null;
+    private JTree Files;
 
     public Escritorio() {
         setTitle("Windows");
@@ -169,12 +171,12 @@ public class Escritorio extends JFrame {
         btnCmd.setBounds(850, 5, 30, 30);
         barraTareas.add(btnCmd);
         btnCmd.addActionListener(e -> {
-            cmd consola = new cmd(Sistem.CuentaActual); 
+            cmd consola = new cmd(Sistem.CuentaActual);
             escritorio.add(consola);
             consola.setVisible(true);
 
             try {
-                consola.setSelected(true); 
+                consola.setSelected(true);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -277,6 +279,7 @@ public class Escritorio extends JFrame {
         JButton btnCopiar = new JButton("Copiar");
         JButton btnPegar = new JButton("Pegar");
         JButton btnOrdenar = new JButton("Ordenar *");
+        JButton btnOrganizar = new JButton("Organizar");
         JTextField txtBuscar = new JTextField(15);
 
         JPopupMenu menuOrdenar = new JPopupMenu();
@@ -286,7 +289,7 @@ public class Escritorio extends JFrame {
         menuOrdenar.add(new JMenuItem("Tamaño"));
         btnOrdenar.addActionListener(e -> menuOrdenar.show(btnOrdenar, 0, btnOrdenar.getHeight()));
 
-        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnOrdenar};
+        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar,btnOrganizar, btnOrdenar};
         Color fondoFijoTop = new Color(180, 180, 180);
 
         GridBagConstraints gbcTop = new GridBagConstraints();
@@ -353,6 +356,10 @@ public class Escritorio extends JFrame {
         JButton btnImg = new JButton("Imágenes");
         JButton btnMus = new JButton("Música");
 
+        btnDoc.addActionListener(e -> cargarSoloCarpeta("Documentos"));
+        btnMus.addActionListener(e -> cargarSoloCarpeta("Musica"));
+        btnImg.addActionListener(e -> cargarSoloCarpeta("Imagenes"));
+
         Color fondoFijo = new Color(200, 200, 200);
 
         for (JButton b : new JButton[]{btnDoc, btnImg, btnMus}) {
@@ -398,11 +405,9 @@ public class Escritorio extends JFrame {
         fila2col2.setBackground(c4);
 
         // Carpeta raíz (puedes cambiar la ruta según necesites)
-        File carpeta = Sistem.CuentaActual;
-
-        DefaultMutableTreeNode raiz = crearNodo(carpeta);
-        JTree arbol = new JTree(raiz);
-        JScrollPane scroll = new JScrollPane(arbol);
+        Files = new JTree();
+        cargarArbolCompleto();
+        JScrollPane scroll = new JScrollPane(Files);
 
         fila2col2.add(scroll, BorderLayout.CENTER);
 
@@ -419,19 +424,49 @@ public class Escritorio extends JFrame {
     }
 
 // ------------------- Método recursivo para crear nodos -------------------
-    private DefaultMutableTreeNode crearNodo(File archivo) {
-        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(archivo.getName());
+    private void cargarArbolCompleto() {
+        File usuario = Sistem.CuentaActual;
 
-        if (archivo.isDirectory()) {
-            File[] archivos = archivo.listFiles();
-            if (archivos != null) {
-                for (File f : archivos) {
-                    nodo.add(crearNodo(f));
+        // El nodo raíz será el NOMBRE DEL USUARIO
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario.getName());
+
+        // Agregar las 3 carpetas principales del usuario
+        raiz.add(cargarCarpeta(new File(usuario, "Documentos")));
+        raiz.add(cargarCarpeta(new File(usuario, "Musica")));
+        raiz.add(cargarCarpeta(new File(usuario, "Imagenes")));
+
+        Files.setModel(new DefaultTreeModel(raiz));
+        Files.setRootVisible(true);    // Mostrar el nombre del usuario
+        Files.setShowsRootHandles(true);
+    }
+
+    private DefaultMutableTreeNode cargarCarpeta(File carpeta) {
+
+        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(carpeta.getName());
+
+        File[] lista = carpeta.listFiles();
+        if (lista != null) {
+            for (File f : lista) {
+
+                if (f.isDirectory()) {
+                    nodo.add(cargarCarpeta(f));  // Recursivo
+                } else {
+                    nodo.add(new DefaultMutableTreeNode(f.getName()));
                 }
             }
         }
 
         return nodo;
+    }
+
+    private void cargarSoloCarpeta(String nombreCarpeta) {
+        File usuario = Sistem.CuentaActual;
+        File carpeta = new File(usuario, nombreCarpeta);
+
+        DefaultMutableTreeNode raiz = cargarCarpeta(carpeta);
+
+        Files.setModel(new DefaultTreeModel(raiz));
+        Files.setRootVisible(true);
     }
 
     public static void main(String[] args) {
