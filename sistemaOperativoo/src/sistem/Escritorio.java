@@ -37,6 +37,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyVetoException;
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -56,6 +57,7 @@ public class Escritorio extends JFrame {
     private JDesktopPane escritorio = new JDesktopPane();
     private JInternalFrame ventanaCarpeta = null;
     private JTree Files;
+    private GestorDeArchivos gestor;
 
     public Escritorio() {
         setTitle("Windows");
@@ -278,8 +280,8 @@ public class Escritorio extends JFrame {
         JButton btnCrear = new JButton("Crear");
         JButton btnCopiar = new JButton("Copiar");
         JButton btnPegar = new JButton("Pegar");
-        JButton btnOrdenar = new JButton("Ordenar *");
         JButton btnOrganizar = new JButton("Organizar");
+        JButton btnOrdenar = new JButton("Ordenar *");
         JTextField txtBuscar = new JTextField(15);
 
         JPopupMenu menuOrdenar = new JPopupMenu();
@@ -289,7 +291,7 @@ public class Escritorio extends JFrame {
         menuOrdenar.add(new JMenuItem("Tamaño"));
         btnOrdenar.addActionListener(e -> menuOrdenar.show(btnOrdenar, 0, btnOrdenar.getHeight()));
 
-        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar,btnOrganizar, btnOrdenar};
+        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnOrganizar, btnOrdenar};
         Color fondoFijoTop = new Color(180, 180, 180);
 
         GridBagConstraints gbcTop = new GridBagConstraints();
@@ -329,6 +331,65 @@ public class Escritorio extends JFrame {
 
             fila1col2.add(b, gbcTop);
         }
+        // ------------------- Crear y configurar el área del árbol -------------------
+        JPanel fila2col2 = new JPanel(new BorderLayout());
+        fila2col2.setBackground(c4);
+
+        // Crear JTree y cargar estructura completa
+        Files = new JTree();
+        cargarArbolCompleto();
+
+        // Crear gestor para manejar todos los botones
+        gestor = new GestorDeArchivos(Files);
+
+        // Scroll
+        JScrollPane scroll = new JScrollPane(Files);
+        fila2col2.add(scroll, BorderLayout.CENTER);
+
+        btnCrear.addActionListener(e -> {
+            try {
+                gestor.crearElemento(this); // this = JFrame padre
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error creando: " + ex.getMessage());
+            }
+        });
+
+        btnCambiarNombre.addActionListener(e -> {
+            try {
+                gestor.renombrarSeleccionado(this);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error renombrando: " + ex.getMessage());
+            }
+        });
+
+        btnCopiar.addActionListener(e -> gestor.copiarSeleccionado(this));
+
+        btnPegar.addActionListener(e -> {
+            try {
+                gestor.pegarSeleccionado(this);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error pegando: " + ex.getMessage());
+            }
+        });
+
+        // Ordenar - por ejemplo menú o botones
+        Component[] opciones = menuOrdenar.getComponents();
+
+        ((JMenuItem) opciones[0]).addActionListener(ev -> gestor.ordenarSeleccionado("nombre"));
+        ((JMenuItem) opciones[1]).addActionListener(ev -> gestor.ordenarSeleccionado("fecha"));
+        ((JMenuItem) opciones[2]).addActionListener(ev -> gestor.ordenarSeleccionado("tipo"));
+        ((JMenuItem) opciones[3]).addActionListener(ev -> gestor.ordenarSeleccionado("tamano"));
+
+        btnOrganizar.addActionListener(e -> gestor.organizar());
+
+// Buscar por texto (txtBuscar)
+        txtBuscar.addActionListener(ev -> {
+            String q = txtBuscar.getText();
+            gestor.buscar(q);
+        });
 
         gbcTop.gridx = botonesTop.length;
         gbcTop.weightx = 1;
@@ -401,16 +462,6 @@ public class Escritorio extends JFrame {
         contenido.add(fila2col1, gbc);
 
         // ------------------- Fila 2 Columna 2 (JTree con scroll) -------------------
-        JPanel fila2col2 = new JPanel(new BorderLayout());
-        fila2col2.setBackground(c4);
-
-        // Carpeta raíz (puedes cambiar la ruta según necesites)
-        Files = new JTree();
-        cargarArbolCompleto();
-        JScrollPane scroll = new JScrollPane(Files);
-
-        fila2col2.add(scroll, BorderLayout.CENTER);
-
         gbc.gridx = 1;
         gbc.gridy = 1;
         gbc.weightx = 1;
