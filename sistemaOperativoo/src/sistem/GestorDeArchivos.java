@@ -21,8 +21,11 @@ public class GestorDeArchivos {
     private final JTree arbol;                     // el JTree de la UI
     private File copiadoTemporal = null;           // archivo o carpeta marcada para copiar
     // Constructor recibe el JTree que usa Escritorio
-    public GestorDeArchivos(JTree arbol) {
+    private Escritorio ventana;
+
+    public GestorDeArchivos(JTree arbol, Escritorio ventana) {
         this.arbol = arbol;
+        this.ventana = ventana;
     }
 
     // ---------------- UTIL: obtener File desde TreePath ----------------
@@ -30,9 +33,13 @@ public class GestorDeArchivos {
     // 1) el root del arbol es el nombre del usuario (Files.setRootVisible(true))
     // 2) el root es "ROOT" o la carpeta seleccionada (setRootVisible(false))
     public File fileDesdePath(TreePath path) {
-        if (path == null) return null;
+        if (path == null) {
+            return null;
+        }
         Object[] nodos = path.getPath();
-        if (nodos.length == 0) return null;
+        if (nodos.length == 0) {
+            return null;
+        }
 
         // Raíz esperada: Sistem.CuentaActual.getName() o "ROOT" u otra
         File base = Sistem.CuentaActual; // Unidad_Z/USUARIO siempre base
@@ -67,7 +74,9 @@ public class GestorDeArchivos {
             return false;
         }
         File seleccionado = fileDesdePath(sel);
-        if (seleccionado == null) return false;
+        if (seleccionado == null) {
+            return false;
+        }
 
         String nombreNodo = sel.getLastPathComponent().toString();
 
@@ -78,7 +87,9 @@ public class GestorDeArchivos {
         }
 
         String nuevo = JOptionPane.showInputDialog(parent, "Nuevo nombre:", nombreNodo);
-        if (nuevo == null || nuevo.trim().isEmpty()) return false;
+        if (nuevo == null || nuevo.trim().isEmpty()) {
+            return false;
+        }
         nuevo = nuevo.trim();
 
         File destino = new File(seleccionado.getParentFile(), nuevo);
@@ -88,16 +99,22 @@ public class GestorDeArchivos {
         }
 
         boolean ok = seleccionado.renameTo(destino);
-        if (!ok) throw new IOException("No se pudo renombrar.");
+        if (!ok) {
+            throw new IOException("No se pudo renombrar.");
+        }
 
         refrescarNodoPadre(sel.getParentPath());
         return true;
     }
 
     private boolean esNombreProhibidoParaRenombrar(String nombre) {
-        if (nombre == null) return false;
+        if (nombre == null) {
+            return false;
+        }
         String nm = nombre.toLowerCase();
-        if (Sistem.CuentaActual != null && nm.equals(Sistem.CuentaActual.getName().toLowerCase())) return true;
+        if (Sistem.CuentaActual != null && nm.equals(Sistem.CuentaActual.getName().toLowerCase())) {
+            return true;
+        }
         return nm.equals("documentos") || nm.equals("musica") || nm.equals("imagenes");
     }
 
@@ -105,53 +122,50 @@ public class GestorDeArchivos {
     // Si nombre contiene '.' se crea archivo, si no carpeta.
     // Crea dentro de la carpeta seleccionada; si se selecciona archivo, usa su padre.
     public boolean crearElemento(JFrame parent) throws IOException {
-        TreePath sel = arbol.getSelectionPath();
-        File destinoDir;
-        if (sel == null) {
-            // sin selección → crear en la raíz del usuario
-            destinoDir = Sistem.CuentaActual;
-        } else {
-            File fsel = fileDesdePath(sel);
-            if (fsel.isFile()) destinoDir = fsel.getParentFile();
-            else destinoDir = fsel;
-        }
-        if (destinoDir == null || !destinoDir.exists()) {
-            JOptionPane.showMessageDialog(parent, "Carpeta destino inválida.");
+
+        // obtener carpeta seleccionada: Documentos, Musica o Imagenes
+        String nombreCarpeta = Escritorio.getCarpetaActual();
+
+        if (nombreCarpeta == null) {
+            JOptionPane.showMessageDialog(parent,
+                    "Primero seleccione: Documentos, Música o Imágenes.");
             return false;
         }
 
-        String nombre = JOptionPane.showInputDialog(parent, "Nombre (para archivo incluya extensión, p.ej. nota.txt):");
-        if (nombre == null) return false;
-        nombre = nombre.trim();
-        if (nombre.isEmpty()) return false;
+        // convertir a File real
+        File usuario = Sistem.CuentaActual;
+        File destinoDir = new File(usuario, nombreCarpeta);
 
-        if (nombre.contains(".")) {
-            // crear archivo: validar extensión mínima
-            int dot = nombre.lastIndexOf('.');
-            if (dot == nombre.length() - 1) {
-                JOptionPane.showMessageDialog(parent, "Nombre inválido: extensión faltante.");
-                return false;
-            }
-            File nuevo = new File(destinoDir, nombre);
-            if (nuevo.exists()) {
-                JOptionPane.showMessageDialog(parent, "Ya existe ese archivo.");
-                return false;
-            }
-            boolean creado = nuevo.createNewFile();
-            if (!creado) throw new IOException("No se pudo crear archivo.");
-        } else {
-            // crear carpeta
-            File nuevo = new File(destinoDir, nombre);
-            if (nuevo.exists()) {
-                JOptionPane.showMessageDialog(parent, "Ya existe esa carpeta.");
-                return false;
-            }
-            boolean ok = nuevo.mkdirs();
-            if (!ok) throw new IOException("No se pudo crear carpeta.");
+        String nombre = JOptionPane.showInputDialog(parent,
+                "Nombre (para archivo incluya extensión, ej: nota.txt):");
+
+        if (nombre == null || nombre.trim().isEmpty()) {
+            return false;
         }
 
-        // refrescar vista (refresca la carpeta destino)
+        nombre = nombre.trim();
+
+        // archivo
+        if (nombre.contains(".")) {
+            File nuevo = new File(destinoDir, nombre);
+            if (nuevo.exists()) {
+                JOptionPane.showMessageDialog(parent, "Ese archivo ya existe.");
+                return false;
+            }
+            nuevo.createNewFile();
+        } // carpeta
+        else {
+            File nuevo = new File(destinoDir, nombre);
+            if (nuevo.exists()) {
+                JOptionPane.showMessageDialog(parent, "Esa carpeta ya existe.");
+                return false;
+            }
+            nuevo.mkdirs();
+        }
+
+        // actualizar árbol
         refrescarNodoPorFile(destinoDir);
+
         return true;
     }
 
@@ -186,8 +200,11 @@ public class GestorDeArchivos {
             destinoDir = Sistem.CuentaActual;
         } else {
             File fsel = fileDesdePath(sel);
-            if (fsel.isFile()) destinoDir = fsel.getParentFile();
-            else destinoDir = fsel;
+            if (fsel.isFile()) {
+                destinoDir = fsel.getParentFile();
+            } else {
+                destinoDir = fsel;
+            }
         }
         if (destinoDir == null || !destinoDir.exists() || !destinoDir.isDirectory()) {
             JOptionPane.showMessageDialog(parent, "Seleccione una carpeta destino válida.");
@@ -197,7 +214,9 @@ public class GestorDeArchivos {
         File nuevo = new File(destinoDir, copiadoTemporal.getName());
         if (nuevo.exists()) {
             int r = JOptionPane.showConfirmDialog(parent, "El elemento existe. ¿Desea sobrescribir?", "Sobrescribir", JOptionPane.YES_NO_OPTION);
-            if (r != JOptionPane.YES_OPTION) return false;
+            if (r != JOptionPane.YES_OPTION) {
+                return false;
+            }
             // borrar existente antes de copiar
             borrarRecursivo(nuevo);
         }
@@ -217,9 +236,12 @@ public class GestorDeArchivos {
             Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     Path targetDir = dst.resolve(src.relativize(dir));
-                    if (!Files.exists(targetDir)) Files.createDirectories(targetDir);
+                    if (!Files.exists(targetDir)) {
+                        Files.createDirectories(targetDir);
+                    }
                     return FileVisitResult.CONTINUE;
                 }
+
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path targetFile = dst.resolve(src.relativize(file));
                     Files.copy(file, targetFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
@@ -236,7 +258,9 @@ public class GestorDeArchivos {
             File[] hijos = f.listFiles();
             if (hijos != null) {
                 for (File h : hijos) {
-                    if (!borrarRecursivo(h)) return false;
+                    if (!borrarRecursivo(h)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -254,10 +278,14 @@ public class GestorDeArchivos {
             File fsel = fileDesdePath(sel);
             dir = fsel.isDirectory() ? fsel : fsel.getParentFile();
         }
-        if (dir == null || !dir.exists() || !dir.isDirectory()) return;
+        if (dir == null || !dir.exists() || !dir.isDirectory()) {
+            return;
+        }
 
         File[] hijos = dir.listFiles();
-        if (hijos == null) return;
+        if (hijos == null) {
+            return;
+        }
 
         List<File> list = Arrays.asList(hijos);
         Comparator<File> cmp;
@@ -315,27 +343,50 @@ public class GestorDeArchivos {
     // ---------------- BUSCAR ----------------
     // Muestra en el arbol solo coincidencias (archivo o carpeta) encontradas bajo Documentos/Musica/Imagenes
     public void buscar(String termino) {
-        if (termino == null) termino = "";
+
+        if (termino == null) {
+            termino = "";
+        }
         termino = termino.trim().toLowerCase();
 
         DefaultMutableTreeNode raiz = new DefaultMutableTreeNode("Resultados");
-        File usuario = Sistem.CuentaActual;
-        if (usuario == null) return;
 
-        buscarEnCarpeta(raiz, new File(usuario, "Documentos"), termino);
-        buscarEnCarpeta(raiz, new File(usuario, "Musica"), termino);
-        buscarEnCarpeta(raiz, new File(usuario, "Imagenes"), termino);
+        File usuario = Sistem.CuentaActual;
+        if (usuario == null) {
+            return;
+        }
+
+        // ============================
+        // CASO A — BUSCAR SOLO EN UNA CARPETA
+        // ============================
+        if (Escritorio.getCarpetaActual() != null) {
+
+            File carpeta = new File(usuario, Escritorio.getCarpetaActual());
+            buscarEnCarpeta(raiz, carpeta, termino);
+
+        } else {
+            buscarEnCarpeta(raiz, usuario, termino);
+        }
 
         arbol.setModel(new DefaultTreeModel(raiz));
         arbol.setRootVisible(true);
         arbol.setShowsRootHandles(true);
-        SwingUtilities.invokeLater(() -> { for (int i=0;i<arbol.getRowCount();i++) arbol.expandRow(i); });
+
+        SwingUtilities.invokeLater(() -> {
+            for (int i = 0; i < arbol.getRowCount(); i++) {
+                arbol.expandRow(i);
+            }
+        });
     }
 
     private void buscarEnCarpeta(DefaultMutableTreeNode padre, File carpeta, String termino) {
-        if (carpeta == null || !carpeta.exists()) return;
+        if (carpeta == null || !carpeta.exists()) {
+            return;
+        }
         File[] hijos = carpeta.listFiles();
-        if (hijos == null) return;
+        if (hijos == null) {
+            return;
+        }
         for (File f : hijos) {
             if (f.getName().toLowerCase().contains(termino)) {
                 padre.add(crearNodoRecursivo(f));
@@ -366,15 +417,21 @@ public class GestorDeArchivos {
     private DefaultMutableTreeNode nodoPorFile(File file) {
         DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
         Object root = modelo.getRoot();
-        if (!(root instanceof DefaultMutableTreeNode)) return null;
+        if (!(root instanceof DefaultMutableTreeNode)) {
+            return null;
+        }
         DefaultMutableTreeNode nodoRoot = (DefaultMutableTreeNode) root;
         return buscarNodoRecursivo(nodoRoot, file);
     }
 
     private DefaultMutableTreeNode buscarNodoRecursivo(DefaultMutableTreeNode nodo, File file) {
-        if (nodo == null) return null;
+        if (nodo == null) {
+            return null;
+        }
         Object userObj = nodo.getUserObject();
-        if (userObj == null) return null;
+        if (userObj == null) {
+            return null;
+        }
 
         // obtener ruta completa del nodo construyéndola desde root hasta nodo
         TreeNode[] path = nodo.getPath();
@@ -398,13 +455,16 @@ public class GestorDeArchivos {
             if (fileNodo.getCanonicalPath().equals(file.getCanonicalPath())) {
                 return nodo;
             }
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
 
         Enumeration children = nodo.children();
         while (children.hasMoreElements()) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) children.nextElement();
             DefaultMutableTreeNode res = buscarNodoRecursivo(child, file);
-            if (res != null) return res;
+            if (res != null) {
+                return res;
+            }
         }
         return null;
     }
@@ -416,12 +476,16 @@ public class GestorDeArchivos {
             return;
         }
         File parentFile = fileDesdePath(parentPath);
-        if (parentFile != null) refrescarNodoPorFile(parentFile);
+        if (parentFile != null) {
+            refrescarNodoPorFile(parentFile);
+        }
     }
 
     // refrescar nodo a partir de File (reconstruye su nodo)
     private void refrescarNodoPorFile(File dir) {
-        if (dir == null) return;
+        if (dir == null) {
+            return;
+        }
         DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
         DefaultMutableTreeNode nodo = nodoPorFile(dir);
         if (nodo == null) {
@@ -443,7 +507,9 @@ public class GestorDeArchivos {
     // ---------------- util ----------------
     private String getExtension(String nombre) {
         int i = nombre.lastIndexOf('.');
-        if (i == -1) return "";
+        if (i == -1) {
+            return "";
+        }
         return nombre.substring(i + 1).toLowerCase();
     }
 }

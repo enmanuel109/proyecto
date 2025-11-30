@@ -58,6 +58,7 @@ public class Escritorio extends JFrame {
     private JInternalFrame ventanaCarpeta = null;
     private JTree Files;
     private GestorDeArchivos gestor;
+    private static String carpetaActual = null;
 
     public Escritorio() {
         setTitle("Windows");
@@ -337,10 +338,26 @@ public class Escritorio extends JFrame {
 
         // Crear JTree y cargar estructura completa
         Files = new JTree();
+        Files.setCellRenderer(new FormatoNodos());
         cargarArbolCompleto();
 
         // Crear gestor para manejar todos los botones
-        gestor = new GestorDeArchivos(Files);
+        gestor = new GestorDeArchivos(Files, this);
+
+        // ---- HEADER PARA EL ÁRBOL ----
+        JPanel header = new JPanel(new GridLayout(1, 4));
+        header.setBackground(new Color(70, 70, 70));
+
+        String[] columnas = {"Nombre", "Fecha modificación", "Tipo", "Tamaño"};
+
+        for (String col : columnas) {
+            JLabel lbl = new JLabel(col, SwingConstants.LEFT);
+            lbl.setForeground(Color.WHITE);
+            lbl.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 5));
+            header.add(lbl);
+        }
+
+        fila2col2.add(header, BorderLayout.NORTH);
 
         // Scroll
         JScrollPane scroll = new JScrollPane(Files);
@@ -383,8 +400,11 @@ public class Escritorio extends JFrame {
         ((JMenuItem) opciones[2]).addActionListener(ev -> gestor.ordenarSeleccionado("tipo"));
         ((JMenuItem) opciones[3]).addActionListener(ev -> gestor.ordenarSeleccionado("tamano"));
 
-        btnOrganizar.addActionListener(e -> gestor.organizar());
-
+        btnOrganizar.addActionListener(e -> {
+            limpiarCarpetaActual();      // ← Quita la carpeta seleccionada
+            Files.clearSelection();      // ← Quita selección en el JTree
+            gestor.organizar();          // ← Ejecuta lo que ya hacía
+        });
 // Buscar por texto (txtBuscar)
         txtBuscar.addActionListener(ev -> {
             String q = txtBuscar.getText();
@@ -407,20 +427,54 @@ public class Escritorio extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         contenido.add(fila1col2, gbc);
 
-        // ------------------- Fila 2 Columna 1 (botones lateral) -------------------
-        JPanel fila2col1 = new JPanel();
-        fila2col1.setBackground(c3);
-        fila2col1.setLayout(new BoxLayout(fila2col1, BoxLayout.Y_AXIS));
-        fila2col1.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // ------------------- Fila 2 Columna 1 (botones lateral CON SCROLL) -------------------
+        JPanel panelBotones = new JPanel();
+        panelBotones.setBackground(c3);
+        panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
+        panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JButton btnDoc = new JButton("Documentos");
-        JButton btnImg = new JButton("Imágenes");
-        JButton btnMus = new JButton("Música");
+        // ICONOS DOCUMENTOS / IMAGENES / MUSICA
+        ImageIcon iconDoc = new ImageIcon("src/IMGS/Iconodoc.png");
+        ImageIcon iconImg = new ImageIcon("src/IMGS/Iconoimagenes.png");
+        ImageIcon iconMus = new ImageIcon("src/IMGS/IconoMusica.png");
 
-        btnDoc.addActionListener(e -> cargarSoloCarpeta("Documentos"));
-        btnMus.addActionListener(e -> cargarSoloCarpeta("Musica"));
-        btnImg.addActionListener(e -> cargarSoloCarpeta("Imagenes"));
+// Redimensionamos los iconos
+        Image iDoc = iconDoc.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        Image iImg = iconImg.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+        Image iMus = iconMus.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
 
+// Se asignan los iconos ya escalados
+        iconDoc = new ImageIcon(iDoc);
+        iconImg = new ImageIcon(iImg);
+        iconMus = new ImageIcon(iMus);
+
+// Los botones de carpeta
+        JButton btnDoc = new JButton("  Documentos", iconDoc);
+        JButton btnImg = new JButton("  Imágenes", iconImg);
+        JButton btnMus = new JButton("  Música", iconMus);
+// Ajuste para que texto quede a la derecha del icono, estilo Windows
+        btnDoc.setHorizontalAlignment(SwingConstants.LEFT);
+        btnImg.setHorizontalAlignment(SwingConstants.LEFT);
+        btnMus.setHorizontalAlignment(SwingConstants.LEFT);
+
+        btnDoc.setIconTextGap(10);
+        btnImg.setIconTextGap(10);
+        btnMus.setIconTextGap(10);
+// acciones
+        btnDoc.addActionListener(e -> {
+            carpetaActual = "Documentos";
+            cargarSoloCarpeta("Documentos");
+        });
+        btnImg.addActionListener(e -> {
+            carpetaActual = "Imagenes";
+            cargarSoloCarpeta("Imagenes");
+        });
+        btnMus.addActionListener(e -> {
+            carpetaActual = "Musica";
+            cargarSoloCarpeta("Musica");
+        });
+
+// estilo
         Color fondoFijo = new Color(200, 200, 200);
 
         for (JButton b : new JButton[]{btnDoc, btnImg, btnMus}) {
@@ -444,14 +498,18 @@ public class Escritorio extends JFrame {
                     b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
                 }
             });
+
+            panelBotones.add(b);
+            panelBotones.add(Box.createVerticalStrut(10));
         }
 
-        fila2col1.add(btnDoc);
-        fila2col1.add(Box.createVerticalStrut(10));
-        fila2col1.add(btnImg);
-        fila2col1.add(Box.createVerticalStrut(10));
-        fila2col1.add(btnMus);
+// scroll lateral
+        JScrollPane scrollBotones = new JScrollPane(panelBotones);
+        scrollBotones.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollBotones.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollBotones.setBorder(null);
 
+// agregar al layout general
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0;
@@ -459,7 +517,7 @@ public class Escritorio extends JFrame {
         gbc.ipadx = 300;
         gbc.ipady = 0;
         gbc.fill = GridBagConstraints.BOTH;
-        contenido.add(fila2col1, gbc);
+        contenido.add(scrollBotones, gbc);
 
         // ------------------- Fila 2 Columna 2 (JTree con scroll) -------------------
         gbc.gridx = 1;
@@ -518,6 +576,14 @@ public class Escritorio extends JFrame {
 
         Files.setModel(new DefaultTreeModel(raiz));
         Files.setRootVisible(true);
+    }
+
+    public void limpiarCarpetaActual() {
+        carpetaActual = null;
+    }
+
+    public static String getCarpetaActual() {
+        return carpetaActual;
     }
 
     public static void main(String[] args) {
