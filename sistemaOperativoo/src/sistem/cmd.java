@@ -25,15 +25,18 @@ public class cmd extends JInternalFrame {
 
     private final JTextArea area;
     private int inicioEntrada = 0;
-    private final FuncionesFile manejador;
+    private final ComandosFileCmd manejador;  // Ahora usa ComandosFileCmd
 
-    public cmd() {
+    // ==============================
+    //   CONSTRUCTOR (RECIBE CARPETA USUARIO)
+    // ==============================
+    public cmd(File carpetaUsuario) {
         super("CMD Insano", true, true, true, true);
         setSize(1100, 650);
         setLocation(20, 20);
 
-        String dirUsuario = System.getProperty("user.dir");
-        manejador = new FuncionesFile(dirUsuario);
+        // RUTA INICIAL = carpeta del usuario (Unidad_Z/USUARIO)
+        manejador = new ComandosFileCmd(carpetaUsuario.getAbsolutePath());
 
         area = new JTextArea();
         area.setEditable(true);
@@ -53,25 +56,35 @@ public class cmd extends JInternalFrame {
 
         writePrompt();
 
+        // ==============================
+        // CONTROL DEL TECLADO
+        // ==============================
         area.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 int caretPos = area.getCaretPosition();
 
-                if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_HOME) && caretPos <= inicioEntrada) {
+                // Evitar mover antes del prompt
+                if ((e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_HOME)
+                        && caretPos <= inicioEntrada) {
                     e.consume();
                     area.setCaretPosition(inicioEntrada);
                     return;
                 }
+
+                // Evitar borrar antes del prompt
                 if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && caretPos <= inicioEntrada) {
                     e.consume();
                     return;
                 }
+
+                // Evitar borrar adelante antes del prompt
                 if (e.getKeyCode() == KeyEvent.VK_DELETE && caretPos < inicioEntrada) {
                     e.consume();
                     return;
                 }
 
+                // ENTER = procesar comando
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     e.consume();
                     String command;
@@ -93,18 +106,30 @@ public class cmd extends JInternalFrame {
         setVisible(true);
     }
 
+    // ==============================
+    // MÉTODOS AUXILIARES
+    // ==============================
     private void appendText(String s) {
         area.append(s);
         area.setCaretPosition(area.getDocument().getLength());
     }
 
     private void writePrompt() {
-        File actual = manejador.getPathActual();
-        String ruta = actual != null ? actual.getAbsolutePath() : "";
-        appendText(ruta + ">");
-        inicioEntrada = area.getDocument().getLength();
-    }
+    File actual = manejador.getPathActual();
+    String rutaCompleta = actual != null ? actual.getAbsolutePath() : "";
 
+    // Buscar desde la carpeta Unidad_Z
+    int idx = rutaCompleta.indexOf("Unidad_Z");
+    String rutaMostrar = (idx != -1) ? rutaCompleta.substring(idx) : rutaCompleta;
+
+    appendText(rutaMostrar + ">");
+    inicioEntrada = area.getDocument().getLength();
+}
+
+
+    // ==============================
+    // PROCESAR COMANDOS
+    // ==============================
     private void processCommand(String raw) {
         if (raw == null || raw.isEmpty()) {
             return;
@@ -115,6 +140,7 @@ public class cmd extends JInternalFrame {
 
         try {
             switch (cmd) {
+
                 case "help":
                     appendText("Comandos disponibles:\n");
                     appendText("  cd <ruta>\n");
@@ -131,23 +157,24 @@ public class cmd extends JInternalFrame {
                     appendText("  exit\n");
                     break;
 
+                // ==============================
+                //         cd 
+                // ==============================
                 case "cd":
                     if (parts.length < 2) {
-                        File actual = manejador.getPathActual();
-                        if (actual != null) {
-                            appendText(actual.getAbsolutePath() + "\n");
-                        }
+                        appendText(manejador.getPathActual().getAbsolutePath() + "\n");
                     } else {
                         String ruta = raw.substring(raw.indexOf(' ') + 1).trim();
                         File base = manejador.getPathActual();
                         File nueva;
 
                         if ("..".equals(ruta)) {
-                            nueva = base != null ? base.getParentFile() : null;
+                            nueva = base.getParentFile();
                         } else {
                             File posible = new File(ruta);
                             nueva = posible.isAbsolute() ? posible : new File(base, ruta);
                         }
+
                         if (manejador.cd(nueva)) {
                             appendText(manejador.getPathActual().getAbsolutePath() + "\n");
                         } else {
@@ -156,9 +183,9 @@ public class cmd extends JInternalFrame {
                     }
                     break;
 
-                case "...":
                 case "cd..":
                 case "cdback":
+                case "...":
                     if (manejador.cdBack()) {
                         appendText(manejador.getPathActual().getAbsolutePath() + "\n");
                     } else {
@@ -166,26 +193,41 @@ public class cmd extends JInternalFrame {
                     }
                     break;
 
+                // ==============================
+                // mkdir
+                // ==============================
                 case "mkdir":
                     if (parts.length < 2) appendText("Uso: mkdir <carpeta>\n");
                     else appendText(manejador.mkdir(parts[1]) + "\n");
                     break;
 
+                // ==============================
+                // mfile
+                // ==============================
                 case "mfile":
                     if (parts.length < 2) appendText("Uso: mfile <archivo>\n");
                     else appendText(manejador.mfile(parts[1]) + "\n");
                     break;
 
+                // ==============================
+                // rm
+                // ==============================
                 case "rm":
                     if (parts.length < 2) appendText("Uso: rm <nombre>\n");
                     else appendText(manejador.rm(parts[1]) + "\n");
                     break;
 
+                // ==============================
+                // dir
+                // ==============================
                 case "dir":
                     String argDir = parts.length < 2 ? "." : raw.substring(raw.indexOf(' ') + 1).trim();
                     appendText(manejador.dir(argDir) + "\n");
                     break;
 
+                // ==============================
+                // wr
+                // ==============================
                 case "wr":
                     if (parts.length < 3) {
                         appendText("Uso: wr <archivo> <texto>\n");
@@ -197,19 +239,31 @@ public class cmd extends JInternalFrame {
                     }
                     break;
 
+                // ==============================
+                // rd
+                // ==============================
                 case "rd":
                     if (parts.length < 2) appendText("Uso: rd <archivo>\n");
                     else appendText(manejador.leerTexto(parts[1]) + "\n");
                     break;
 
+                // ==============================
+                // time
+                // ==============================
                 case "time":
                     appendText(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n");
                     break;
 
+                // ==============================
+                // date
+                // ==============================
                 case "date":
                     appendText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + "\n");
                     break;
 
+                // ==============================
+                // cls
+                // ==============================
                 case "cls":
                     area.setText("");
                     appendText("Microsoft Windows [Versión 10.0.22621.521]\n");
@@ -217,6 +271,9 @@ public class cmd extends JInternalFrame {
                     appendText("Si ocupas ayuda usa el comando 'help'.\n");
                     break;
 
+                // ==============================
+                // exit
+                // ==============================
                 case "exit":
                     dispose();
                     break;

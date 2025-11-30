@@ -39,57 +39,48 @@ public class ArchivosUsuarios {
        [UTF nombre]
        [UTF password]
      */
-    // ======================= AGREGAR USUARIO ==========================
-    public void agregarUsuario(String nombre, String password) throws IOException {
+        public void agregarUsuario(String nombre, String contraseña) throws IOException {
         nombre = nombre.toUpperCase();
 
         if (usuarioExistente(nombre)) {
-            System.out.println("El usuario ya existe.");
             return;
         }
 
-        rusers.seek(rusers.length());   // ir al final del archivo
+        rusers.seek(rusers.length());  
         rusers.writeUTF(nombre);
-        rusers.writeUTF(password);
+        rusers.writeUTF(contraseña);
 
         crearCarpetasUsuario(nombre);
-        System.out.println("Usuario agregado correctamente.");
     }
 
-    // ==================== VALIDAR USUARIO =====================
-    public boolean validarUsuario(String nombre, String pass) throws IOException {
+    public boolean validarUsuario(String nombre, String contraseña) throws IOException {
         nombre = nombre.toUpperCase();
 
         rusers.seek(0);
 
         while (rusers.getFilePointer() < rusers.length()) {
-            String nom = rusers.readUTF();
-            String psw = rusers.readUTF();
+            String name = rusers.readUTF();
+            String pass = rusers.readUTF();
 
-            if (nom.equals(nombre) && psw.equals(pass)) {
+            if (name.equals(nombre) && pass.equals(contraseña)) {
                 return true;
             }
         }
         return false;
     }
 
-    // ==================== VER SI EXISTE ========================
     public boolean usuarioExistente(String nombre) throws IOException {
-        nombre = nombre.toUpperCase();
-
         rusers.seek(0);
-
         while (rusers.getFilePointer() < rusers.length()) {
-            String nom = rusers.readUTF();
-            String psw = rusers.readUTF();
-            if (nom.equals(nombre)) {
+            String name = rusers.readUTF();
+            String pass = rusers.readUTF();
+            if (name.equals(nombre)) {
                 return true;
             }
         }
         return false;
     }
 
-    // ==================== ADMIN POR DEFECTO ====================
     private void crearAdminSiNoExiste() throws IOException {
         if (!usuarioExistente("ADMINISTRADOR")) {
             agregarUsuario("ADMINISTRADOR", "P123/");
@@ -103,8 +94,8 @@ public class ArchivosUsuarios {
 
             while (rusers.getFilePointer() < rusers.length()) {
 
-                String nombre = rusers.readUTF();   // lee usuario
-                rusers.readUTF();                  // lee password
+                String nombre = rusers.readUTF();   
+                rusers.readUTF();                  
 
                 if (!nombre.equals("ADMINISTRADOR")) {
                     contador++;
@@ -114,12 +105,10 @@ public class ArchivosUsuarios {
             return contador > 0;
 
         } catch (IOException e) {
-            // Si falla la lectura, significa que el archivo está corrupto → no hay usuarios reales
             return false;
         }
     }
 
-    // ================= CREAR CARPETAS DE USUARIO ==================
     public void crearCarpetasUsuario(String nombre) {
         File carpetaUsuario = new File("Unidad_Z/" + nombre);
         carpetaUsuario.mkdirs();
@@ -132,7 +121,6 @@ public class ArchivosUsuarios {
         }
     }
 
-    // ================ LISTAR USUARIOS ==================
     public void listarUsuarios() throws IOException {
         rusers.seek(0);
 

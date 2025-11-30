@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
@@ -25,10 +26,10 @@ public class Sistem extends ValidacionUsuarios {
     private JPanel panelFormulario;
     private JPopupMenu menu;
     private JButton btnMenu;
-    private FileUser NewUser = new FileUser();
+    private FileUser NewUser;
     public static File CuentaActual = null;
     private ArchivosUsuarios archivo;
-    
+
     public Sistem() {
         frame = new JFrame("Pantalla Completa con Imagen");
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -72,11 +73,13 @@ public class Sistem extends ValidacionUsuarios {
 
         menu = new JPopupMenu();
         btnMenu.addActionListener(e -> menu.show(btnMenu, 0, -menu.getPreferredSize().height));
-
+        
+        archivo = new ArchivosUsuarios(); // <-- PRIMERO
+        NewUser = new FileUser();
         mostrarFormularioRegistrarse(fondoLabel);
         frame.setVisible(true);
 
-        archivo = new ArchivosUsuarios();
+        
     }
 
     private void limpiarFormulario(JLabel fondoLabel) {
@@ -136,8 +139,8 @@ public class Sistem extends ValidacionUsuarios {
         JTextField txtUsuario = new JTextField();
         txtUsuario.setBounds(0, 25, 280, 30);
         panelFormulario.add(txtUsuario);
-        
-        if (!ArchivosUsuarios.hayMasUsuariosQueAdmin()) {
+
+        if (!archivo.hayMasUsuariosQueAdmin()) {
             txtUsuario.setText("ADMINISTRADOR");
             txtUsuario.setFocusable(false);
         }
@@ -177,26 +180,29 @@ public class Sistem extends ValidacionUsuarios {
         btnEntrar.setBounds(30, 130, 200, 30);
         panelFormulario.add(btnEntrar);
 
-        usuarioFileBinario.cargarUsuarios();
-
         btnEntrar.addActionListener(e -> {
-            String nombre = txtUsuario.getText().trim();
-            String contrasena = new String(txtContrasena.getPassword()).trim();
+            try {
+                String nombre = txtUsuario.getText().trim();
+                String contrasena = new String(txtContrasena.getPassword()).trim();
 
-            if (nombre.isEmpty() || contrasena.isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "Campos vacíos");
-                return;
-            }
-            boolean encontrado = false;
+                if (nombre.isEmpty() || contrasena.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "Campos vacíos");
+                    return;
+                }
+                boolean encontrado = false;
 
-            boolean loginCorrecto = ArchivosUsuarios.validarUsuario(nombre.toUpperCase(), contrasena);
-            if (loginCorrecto) {
-                encontrado = true;
-                CuentaActual = new File("Unidad_Z;", nombre.toUpperCase());
-                frame.dispose();
-                new Escritorio();
-            } else {
-                JOptionPane.showMessageDialog(frame, "Usuario o contraseña incorrectos", "", JOptionPane.ERROR_MESSAGE);
+                boolean loginCorrecto = archivo.validarUsuario(nombre.toUpperCase(), contrasena);
+                if (loginCorrecto) {
+                    encontrado = true;
+                    CuentaActual = new File("Unidad_Z", nombre.toUpperCase());
+                    frame.dispose();
+                    new Escritorio();
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Usuario o contraseña incorrectos", "", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Error al manejar archivos:\n" + ex.getMessage());
             }
 
         });
@@ -260,20 +266,38 @@ public class Sistem extends ValidacionUsuarios {
         panelFormulario.add(btnCrear);
 
         btnCrear.addActionListener(e -> {
-            String nombre = txtUsuario.getText().trim();
-            String contrasena = new String(txtContrasena.getPassword()).trim();
 
-            boolean existe = ArchivosUsuarios.usuarioExistente(nombre);
-            if (existe) {
-                JOptionPane.showMessageDialog(frame, "Ese usuario ya existe");
-            } else {
-                UsuarioSimple nuevo = new UsuarioSimple(nombre.toUpperCase(), contrasena);
-                ArchivosUsuarios.guardarUsuario(nuevo);
-                ArchivosUsuarios.crearCarpetasUsuario(nombre.toUpperCase());
+            try {
+                String nombre = txtUsuario.getText().trim();
+                String contrasena = new String(txtContrasena.getPassword()).trim();
+
+                // Validar campos vacíos
+                if (nombre.isEmpty() || contrasena.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "Rellena todos los campos");
+                    return;
+                }
+
+                // Validar si existe
+                if (archivo.usuarioExistente(nombre.toUpperCase())) {
+                    JOptionPane.showMessageDialog(frame, "Ese usuario ya existe");
+                    return;  // ← MUY IMPORTANTE
+                }
+
+                // Crear usuario
+                archivo.agregarUsuario(nombre.toUpperCase(), contrasena);
+
+                // Configurar cuenta actual
+                CuentaActual = new File("Unidad_Z", nombre.toUpperCase());
+
+                // Cambiar pantalla
+                frame.dispose();
+                new Escritorio();
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Error al manejar archivos:\n" + ex.getMessage());
             }
-            CuentaActual = new File("Unidad_Z;", nombre.toUpperCase());
-            frame.dispose();
-            new Escritorio();
+
         });
 
         fondoLabel.add(panelFormulario);

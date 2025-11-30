@@ -169,16 +169,15 @@ public class Escritorio extends JFrame {
         btnCmd.setBounds(850, 5, 30, 30);
         barraTareas.add(btnCmd);
         btnCmd.addActionListener(e -> {
-            cmd ventanaCmd = new cmd();
-            escritorio.add(ventanaCmd);
-            ventanaCmd.setVisible(true);
+            cmd consola = new cmd(Sistem.CuentaActual); 
+            escritorio.add(consola);
+            consola.setVisible(true);
 
             try {
-                ventanaCmd.setSelected(true);
+                consola.setSelected(true); 
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-
         });
 
         // Menú emergente
