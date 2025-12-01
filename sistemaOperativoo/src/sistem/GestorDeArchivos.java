@@ -334,25 +334,105 @@ public class GestorDeArchivos {
     // ---------------- ORDENAR ----------------
     // ordenKey: "nombre", "fecha", "tipo", "tamano"
     public void ordenarSeleccionado(String ordenKey) {
+
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) arbol.getModel().getRoot();
+
+        File dir = null;
+
+        // 🌟 SI ES RESULTADOS → ORDENAR EL CONTENIDO DE LA RAÍZ
+        if (root.getUserObject() instanceof String && root.getUserObject().equals("Resultados")) {
+            dir = null; // señal de que es especial
+        }
+
         TreePath sel = arbol.getSelectionPath();
-        File dir;
+        if (dir == null && sel != null) {
+            // Cuando estamos en "Resultados", ordenamos directamente los hijos del root
+            DefaultMutableTreeNode nodo = root;
+
+            ordenarNodoPorCriterio(nodo, ordenKey);
+            ((DefaultTreeModel) arbol.getModel()).nodeStructureChanged(nodo);
+            return;
+        }
+
+        // 🌟 ORDEN NORMAL (carpetas reales)
         if (sel == null) {
             dir = Sistem.CuentaActual;
         } else {
             File fsel = fileDesdePath(sel);
+            if (fsel == null) {
+                return;
+            }
+
             dir = fsel.isDirectory() ? fsel : fsel.getParentFile();
         }
-        if (dir == null || !dir.exists() || !dir.isDirectory()) {
+
+        if (!dir.exists() || !dir.isDirectory()) {
             return;
         }
+
+        DefaultMutableTreeNode nodoDir = nodoPorFile(dir);
+        if (nodoDir == null) {
+            return;
+        }
+
+        ordenarNodoPorCriterio(nodoDir, ordenKey);
+        ((DefaultTreeModel) arbol.getModel()).nodeStructureChanged(nodoDir);
+    }
+
+    private void ordenarNodoPorCriterio(DefaultMutableTreeNode nodo, String ordenKey) {
+
+        List<File> archivos = new ArrayList<>();
+
+        Enumeration en = nodo.children();
+        while (en.hasMoreElements()) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) en.nextElement();
+            Object obj = child.getUserObject();
+            if (obj instanceof File) {
+                archivos.add((File) obj);
+            }
+        }
+
+        Comparator<File> cmp;
+        switch (ordenKey.toLowerCase()) {
+            case "fecha":
+                cmp = Comparator.comparingLong(File::lastModified).reversed();
+                break;
+
+            case "tipo":
+                cmp = Comparator
+                        .comparing(File::isDirectory).reversed() // primero carpetas
+                        .thenComparing(f -> getExtension(f.getName()));
+                break;
+
+            case "tamano":
+                cmp = Comparator.comparingLong(File::length).reversed();
+                break;
+
+            default: // nombre
+                cmp = Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER);
+        }
+
+        archivos.sort(cmp);
+
+        nodo.removeAllChildren();
+        for (File f : archivos) {
+            if (f.isDirectory()) {
+                nodo.add(crearNodoRecursivo(f));
+            } else {
+                nodo.add(new DefaultMutableTreeNode(f));
+            }
+        }
+    }
+
+    private void ordenarCarpetasINternas(File dir, String ordenKey) {
 
         File[] hijos = dir.listFiles();
         if (hijos == null) {
             return;
         }
 
-        List<File> list = Arrays.asList(hijos);
         Comparator<File> cmp;
+
         switch (ordenKey.toLowerCase()) {
             case "fecha":
                 cmp = Comparator.comparingLong(File::lastModified).reversed();
@@ -363,28 +443,11 @@ public class GestorDeArchivos {
             case "tamano":
                 cmp = Comparator.comparingLong(File::length).reversed();
                 break;
-            default: // nombre
+            default:
                 cmp = Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER);
         }
-        List<File> ordenados = list.stream().sorted(cmp).collect(Collectors.toList());
 
-        // reconstruir nodo en el arbol para la carpeta dir
-        DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
-        DefaultMutableTreeNode nodoDir = nodoPorFile(dir);
-        if (nodoDir == null) {
-            // si no existe nodo (por ejemplo arbol mostrando solo archivos), refresca padre completo
-            refrescarNodoPorFile(dir.getParentFile());
-            return;
-        }
-        nodoDir.removeAllChildren();
-        for (File f : ordenados) {
-            if (f.isDirectory()) {
-                nodoDir.add(crearNodoRecursivo(f));
-            } else {
-                nodoDir.add(new DefaultMutableTreeNode(f));
-            }
-        }
-        modelo.nodeStructureChanged(nodoDir);
+        Arrays.sort(hijos, cmp);
     }
 
     // ---------------- ORGANIZAR (recargar todo) ----------------
@@ -397,11 +460,7 @@ public class GestorDeArchivos {
         arbol.setRootVisible(true);
         arbol.setShowsRootHandles(true);
         // expandir primer nivel
-        SwingUtilities.invokeLater(() -> {
-            for (int i = 0; i < arbol.getRowCount(); i++) {
-                arbol.expandRow(i);
-            }
-        });
+
     }
 
     // ---------------- BUSCAR ----------------
@@ -413,6 +472,12 @@ public class GestorDeArchivos {
         }
         termino = termino.trim().toLowerCase();
 
+        // Si está vacío → volver a vista normal
+        if (termino.isEmpty()) {
+            organizar();
+            return;
+        }
+
         DefaultMutableTreeNode raiz = new DefaultMutableTreeNode("Resultados");
 
         File usuario = Sistem.CuentaActual;
@@ -420,14 +485,9 @@ public class GestorDeArchivos {
             return;
         }
 
-        // ============================
-        // CASO A — BUSCAR SOLO EN UNA CARPETA
-        // ============================
         if (Escritorio.getCarpetaActual() != null) {
-
             File carpeta = new File(usuario, Escritorio.getCarpetaActual());
             buscarEnCarpeta(raiz, carpeta, termino);
-
         } else {
             buscarEnCarpeta(raiz, usuario, termino);
         }
@@ -435,28 +495,32 @@ public class GestorDeArchivos {
         arbol.setModel(new DefaultTreeModel(raiz));
         arbol.setRootVisible(true);
         arbol.setShowsRootHandles(true);
-
-        SwingUtilities.invokeLater(() -> {
-            for (int i = 0; i < arbol.getRowCount(); i++) {
-                arbol.expandRow(i);
-            }
-        });
     }
 
     private void buscarEnCarpeta(DefaultMutableTreeNode padre, File carpeta, String termino) {
         if (carpeta == null || !carpeta.exists()) {
             return;
         }
+
         File[] hijos = carpeta.listFiles();
         if (hijos == null) {
             return;
         }
+
         for (File f : hijos) {
+
+            // Coincide con búsqueda
             if (f.getName().toLowerCase().contains(termino)) {
-                padre.add(crearNodoRecursivo(f));
+                if (f.isDirectory()) {
+                    padre.add(crearNodoRecursivo(f));
+                } else {
+                    padre.add(new DefaultMutableTreeNode(f));
+                }
             }
+
+            // Seguir buscando recursivamente
             if (f.isDirectory()) {
-                buscarEnCarpeta(padre, f, termino); // seguir buscando recursivamente
+                buscarEnCarpeta(padre, f, termino);
             }
         }
     }
@@ -485,7 +549,11 @@ public class GestorDeArchivos {
     }
 
     // encuentra el nodo en el modelo que corresponde al File pasado (por comparación de rutas)
+    // encuentra el nodo en el modelo que corresponde al File pasado (por comparación de rutas)
     private DefaultMutableTreeNode nodoPorFile(File file) {
+        if (file == null) {
+            return null;
+        }
         DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
         Object root = modelo.getRoot();
         if (!(root instanceof DefaultMutableTreeNode)) {
@@ -496,40 +564,52 @@ public class GestorDeArchivos {
     }
 
     private DefaultMutableTreeNode buscarNodoRecursivo(DefaultMutableTreeNode nodo, File file) {
-        if (nodo == null) {
+        if (nodo == null || file == null) {
             return null;
         }
+
         Object userObj = nodo.getUserObject();
-        if (userObj == null) {
-            return null;
-        }
-
-        // obtener ruta completa del nodo construyéndola desde root hasta nodo
-        TreeNode[] path = nodo.getPath();
-        StringBuilder ruta = new StringBuilder();
-        // si root coincide con el nombre de usuario, partimos de CuentaActual
-        if (Sistem.CuentaActual != null && path.length > 0 && path[0].toString().equalsIgnoreCase(Sistem.CuentaActual.getName())) {
-            ruta.append(Sistem.CuentaActual.getAbsolutePath());
-            for (int i = 1; i < path.length; i++) {
-                ruta.append(File.separator).append(path[i].toString());
-            }
-        } else {
-            // root no igual al user: asumimos que root representa una carpeta bajo CuentaActual
-            ruta.append(Sistem.CuentaActual.getAbsolutePath());
-            for (int i = 0; i < path.length; i++) {
-                ruta.append(File.separator).append(path[i].toString());
-            }
-        }
-
-        File fileNodo = new File(ruta.toString());
         try {
-            if (fileNodo.getCanonicalPath().equals(file.getCanonicalPath())) {
-                return nodo;
+            // Si el nodo guarda un File, comparar canonical paths directamente (más fiable)
+            if (userObj instanceof File) {
+                File nodoFile = (File) userObj;
+                if (nodoFile.getCanonicalPath().equals(file.getCanonicalPath())) {
+                    return nodo;
+                }
+            } else {
+                // Si el nodo guarda un texto (ej: en algunos puntos todavía usabas nombre),
+                // comparar por nombre simple como fallback
+                String nodoName = nodo.getUserObject().toString();
+                if (nodoName.equalsIgnoreCase(file.getName())) {
+                    // adicional: verificar que la ruta construida coincide (intentar construir)
+                    // construimos ruta desde la raiz usando los nombres del path del nodo
+                    StringBuilder ruta = new StringBuilder();
+                    TreeNode[] path = nodo.getPath();
+                    if (Sistem.CuentaActual != null && path.length > 0
+                            && path[0].toString().equalsIgnoreCase(Sistem.CuentaActual.getName())) {
+                        ruta.append(Sistem.CuentaActual.getAbsolutePath());
+                        for (int i = 1; i < path.length; i++) {
+                            ruta.append(File.separator).append(path[i].toString());
+                        }
+                    } else {
+                        ruta.append(Sistem.CuentaActual.getAbsolutePath());
+                        for (int i = 0; i < path.length; i++) {
+                            ruta.append(File.separator).append(path[i].toString());
+                        }
+                    }
+                    try {
+                        if (new File(ruta.toString()).getCanonicalPath().equals(file.getCanonicalPath())) {
+                            return nodo;
+                        }
+                    } catch (IOException ignored) {
+                    }
+                }
             }
-        } catch (IOException ignored) {
+        } catch (IOException ex) {
+            // si falla canonicalPath dejamos seguir buscando
         }
 
-        Enumeration children = nodo.children();
+        Enumeration<?> children = nodo.children();
         while (children.hasMoreElements()) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) children.nextElement();
             DefaultMutableTreeNode res = buscarNodoRecursivo(child, file);
