@@ -536,31 +536,28 @@ public class Escritorio extends JFrame {
     private void cargarArbolCompleto() {
         File usuario = Sistem.CuentaActual;
 
-        // El nodo raíz será el NOMBRE DEL USUARIO
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario.getName());
+        // La raíz debe ser el File real
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
 
-        // Agregar las 3 carpetas principales del usuario
         raiz.add(cargarCarpeta(new File(usuario, "Documentos")));
         raiz.add(cargarCarpeta(new File(usuario, "Musica")));
         raiz.add(cargarCarpeta(new File(usuario, "Imagenes")));
 
         Files.setModel(new DefaultTreeModel(raiz));
-        Files.setRootVisible(true);    // Mostrar el nombre del usuario
-        Files.setShowsRootHandles(true);
+        Files.setRootVisible(true);
     }
 
     private DefaultMutableTreeNode cargarCarpeta(File carpeta) {
 
-        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(carpeta.getName());
+        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(carpeta);
 
         File[] lista = carpeta.listFiles();
         if (lista != null) {
             for (File f : lista) {
-
                 if (f.isDirectory()) {
-                    nodo.add(cargarCarpeta(f));  // Recursivo
+                    nodo.add(cargarCarpeta(f));
                 } else {
-                    nodo.add(new DefaultMutableTreeNode(f.getName()));
+                    nodo.add(new DefaultMutableTreeNode(f));
                 }
             }
         }
@@ -569,14 +566,16 @@ public class Escritorio extends JFrame {
     }
 
     private void cargarSoloCarpeta(String nombreCarpeta) {
-        File usuario = Sistem.CuentaActual;
-        File carpeta = new File(usuario, nombreCarpeta);
+    File usuario = Sistem.CuentaActual;
+    File carpeta = new File(usuario, nombreCarpeta);
 
-        DefaultMutableTreeNode raiz = cargarCarpeta(carpeta);
+    DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
+    raiz.add(cargarCarpeta(carpeta));
 
-        Files.setModel(new DefaultTreeModel(raiz));
-        Files.setRootVisible(true);
-    }
+    Files.setModel(new DefaultTreeModel(raiz));
+    Files.setRootVisible(true);
+    Files.setShowsRootHandles(true);
+}
 
     public void limpiarCarpetaActual() {
         carpetaActual = null;
