@@ -13,47 +13,43 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 
 public class FormatoNodos extends DefaultTreeCellRenderer {
 
-    // Anchos fijos para columnas
+    // Anchos fijos 
     private static final int COL_NOMBRE = 35;
     private static final int COL_FECHA = 50;
     private static final int COL_TIPO = 48;
     private static final int COL_TAM = 15;
 
     @Override
-    public Component getTreeCellRendererComponent(
-            JTree tree, Object value, boolean sel, boolean expanded,
+    public Component getTreeCellRendererComponent(JTree tree, Object nodoObj, boolean selec, boolean expanded,
             boolean leaf, int row, boolean hasFocus) {
 
-        Component c = super.getTreeCellRendererComponent(
-                tree, value, sel, expanded, leaf, row, hasFocus);
+        Component c = super.getTreeCellRendererComponent(tree, nodoObj, selec, expanded, leaf, row, hasFocus);
 
-        // Fuente monoespaciada → columnas siempre alineadas
         c.setFont(new Font("Consolas", Font.PLAIN, 12));
 
-        DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) value;
-        Object user = nodo.getUserObject();
+        DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) nodoObj;
+        Object fileOfnodo = nodo.getUserObject();
 
-        if (user == null) {
+        if (fileOfnodo == null) {
             return c;
         }
 
-        // --- Si es la raíz (nombre del usuario) solo mostrar nombre ---
+        //Si es la raiz solo mostrar nombre
         if (nodo.isRoot()) {
-            if (user instanceof File) {
-                setText(((File) user).getName());
+            if (fileOfnodo instanceof File) {
+                setText(((File) fileOfnodo).getName());
             } else {
-                setText(user.toString());
+                setText(fileOfnodo.toString());
             }
             return c;
         }
 
-        File f = obtenerArchivoDesdeNodo(user);
+        File f = obtenerArchivoDesdeNodo(fileOfnodo);
 
         if (f != null) {
             String nombre = ajustarTexto(f.getName(), COL_NOMBRE);
 
-            String fecha = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
-                    .format(f.lastModified());
+            String fecha = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm").format(f.lastModified());
             fecha = ajustarTexto(fecha, COL_FECHA);
 
             String tipo = f.isDirectory() ? "Carpeta" : obtenerTipo(f);
@@ -76,10 +72,8 @@ public class FormatoNodos extends DefaultTreeCellRenderer {
 
         return c;
     }
-
-    // -------------------------------------------------------------------
-    // Métodos auxiliares
-    // -------------------------------------------------------------------
+    
+    // Metodos auxiliares    
     private File obtenerArchivoDesdeNodo(Object userObj) {
         if (userObj instanceof File) {
             return (File) userObj;
@@ -92,18 +86,16 @@ public class FormatoNodos extends DefaultTreeCellRenderer {
         if (txt == null) {
             return "";
         }
-
-        // Nunca permitir valores que rompan substring
+        
         if (ancho < 4) {
             ancho = 4;
         }
-
-        // Si el texto es menor o igual al ancho → no cortar
+        // Si el texto es menor o igual al ancho
         if (txt.length() <= ancho) {
             return String.format("%-" + ancho + "s", txt);
         }
 
-        // Si el texto es muy largo → cortar seguro
+        // Si el texto es muy largo
         return txt.substring(0, Math.max(0, ancho - 3)) + "...";
     }
 

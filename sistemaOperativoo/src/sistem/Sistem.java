@@ -10,8 +10,6 @@ package sistem;
  */
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -74,13 +72,11 @@ public class Sistem extends ValidacionUsuarios {
 
         menu = new JPopupMenu();
         btnMenu.addActionListener(e -> menu.show(btnMenu, 0, -menu.getPreferredSize().height));
-        
-        archivo = new ArchivosUsuarios(); // <-- PRIMERO
+
+        archivo = new ArchivosUsuarios();
         NewUser = new FileUser();
         mostrarFormularioRegistrarse(fondoLabel);
         frame.setVisible(true);
-
-        
     }
 
     private void limpiarFormulario(JLabel fondoLabel) {
@@ -272,7 +268,7 @@ public class Sistem extends ValidacionUsuarios {
                 String nombre = txtUsuario.getText().trim();
                 String contrasena = new String(txtContrasena.getPassword()).trim();
 
-                // Validar campos vacíos
+                // Validar campos vacios
                 if (nombre.isEmpty() || contrasena.isEmpty()) {
                     JOptionPane.showMessageDialog(frame, "Rellena todos los campos");
                     return;
@@ -281,7 +277,7 @@ public class Sistem extends ValidacionUsuarios {
                 // Validar si existe
                 if (archivo.usuarioExistente(nombre.toUpperCase())) {
                     JOptionPane.showMessageDialog(frame, "Ese usuario ya existe");
-                    return;  // ← MUY IMPORTANTE
+                    return;
                 }
 
                 // Crear usuario

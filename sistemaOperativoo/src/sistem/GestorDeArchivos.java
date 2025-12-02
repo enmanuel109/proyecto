@@ -64,15 +64,24 @@ public class GestorDeArchivos {
             JOptionPane.showMessageDialog(parent, "Seleccione un archivo o carpeta.");
             return false;
         }
-        File seleccionado = fileDesdePath(sel);
-        if (seleccionado == null) {
+
+        DefaultMutableTreeNode nodoSel = (DefaultMutableTreeNode) sel.getLastPathComponent();
+        Object userObj = nodoSel.getUserObject();
+
+        // 🚀 Obtener solo el nombre real del archivo/carpeta
+        String nombreNodo;
+        File seleccionado = null;
+
+        if (userObj instanceof File) {
+            seleccionado = (File) userObj;
+            nombreNodo = seleccionado.getName();   // ← SOLO EL NOMBRE
+        } else {
+            JOptionPane.showMessageDialog(parent, "Elemento inválido.");
             return false;
         }
 
-        String nombreNodo = sel.getLastPathComponent().toString();
-
         // bloquear renombrado de carpetas principales y del usuario
-        if (esNombreProhibidoParaRenombrar(nombreNodo)) {
+        if (esNombreProhibidoParaRenombrar(seleccionado)) {
             JOptionPane.showMessageDialog(parent, "No puedes renombrar '" + nombreNodo + "'.");
             return false;
         }
@@ -81,6 +90,7 @@ public class GestorDeArchivos {
         if (nuevo == null || nuevo.trim().isEmpty()) {
             return false;
         }
+
         nuevo = nuevo.trim();
 
         File destino = new File(seleccionado.getParentFile(), nuevo);
@@ -98,15 +108,46 @@ public class GestorDeArchivos {
         return true;
     }
 
-    private boolean esNombreProhibidoParaRenombrar(String nombre) {
-        if (nombre == null) {
+    private boolean esNombreProhibidoParaRenombrar(File seleccionado) {
+        if (seleccionado == null) {
             return false;
         }
-        String nm = nombre.toLowerCase();
-        if (Sistem.CuentaActual != null && nm.equals(Sistem.CuentaActual.getName().toLowerCase())) {
-            return true;
+
+        try {
+            String path = seleccionado.getCanonicalPath();
+            File usuario = Sistem.CuentaActual;
+
+            if (usuario == null) {
+                return false;
+            }
+
+            // ruta raíz del usuario
+            String usuarioPath = usuario.getCanonicalPath();
+
+            // rutas carpetas fijas
+            File doc = new File(usuario, "Documentos");
+            File mus = new File(usuario, "Musica");
+            File img = new File(usuario, "Imagenes");
+
+            // SI ES exactamente esas carpetas → prohibido
+            if (path.equals(usuarioPath)) {
+                return true;
+            }
+            if (path.equals(doc.getCanonicalPath())) {
+                return true;
+            }
+            if (path.equals(mus.getCanonicalPath())) {
+                return true;
+            }
+            if (path.equals(img.getCanonicalPath())) {
+                return true;
+            }
+
+        } catch (IOException e) {
+            return false;
         }
-        return nm.equals("documentos") || nm.equals("musica") || nm.equals("imagenes");
+
+        return false; // cualquier otro caso → sí se puede renombrar
     }
 
     // ---------------- CREAR (archivo o carpeta) ----------------
@@ -335,48 +376,43 @@ public class GestorDeArchivos {
     // ordenKey: "nombre", "fecha", "tipo", "tamano"
     public void ordenarSeleccionado(String ordenKey) {
 
-        DefaultMutableTreeNode root = (DefaultMutableTreeNode) arbol.getModel().getRoot();
-
-        File dir = null;
-
-        // 🌟 SI ES RESULTADOS → ORDENAR EL CONTENIDO DE LA RAÍZ
-        if (root.getUserObject() instanceof String && root.getUserObject().equals("Resultados")) {
-            dir = null; // señal de que es especial
-        }
-
         TreePath sel = arbol.getSelectionPath();
-        if (dir == null && sel != null) {
-            // Cuando estamos en "Resultados", ordenamos directamente los hijos del root
-            DefaultMutableTreeNode nodo = root;
-
-            ordenarNodoPorCriterio(nodo, ordenKey);
-            ((DefaultTreeModel) arbol.getModel()).nodeStructureChanged(nodo);
-            return;
-        }
-
-        // 🌟 ORDEN NORMAL (carpetas reales)
         if (sel == null) {
-            dir = Sistem.CuentaActual;
-        } else {
-            File fsel = fileDesdePath(sel);
-            if (fsel == null) {
-                return;
-            }
-
-            dir = fsel.isDirectory() ? fsel : fsel.getParentFile();
-        }
-
-        if (!dir.exists() || !dir.isDirectory()) {
+            JOptionPane.showMessageDialog(null,
+                    "Selecciona una carpeta para ordenar.");
             return;
         }
 
+        // Archivo o carpeta seleccionada
+        File fsel = fileDesdePath(sel);
+        if (fsel == null) {
+            return;
+        }
+
+        // Si seleccionó un archivo → ordenar el padre
+        File dir = fsel.isDirectory() ? fsel : fsel.getParentFile();
+        if (dir == null || !dir.exists()) {
+            return;
+        }
+
+        // Encontrar nodo real dentro del árbol
         DefaultMutableTreeNode nodoDir = nodoPorFile(dir);
         if (nodoDir == null) {
+            JOptionPane.showMessageDialog(null,
+                    "No se encontró la carpeta en el árbol.");
             return;
         }
 
         ordenarNodoPorCriterio(nodoDir, ordenKey);
-        ((DefaultTreeModel) arbol.getModel()).nodeStructureChanged(nodoDir);
+
+        DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
+        modelo.nodeStructureChanged(nodoDir);
+
+        // Mantener abierta la carpeta
+        SwingUtilities.invokeLater(() -> {
+            arbol.expandPath(new TreePath(nodoDir.getPath()));
+            arbol.setSelectionPath(new TreePath(nodoDir.getPath()));
+        });
     }
 
     private void ordenarNodoPorCriterio(DefaultMutableTreeNode nodo, String ordenKey) {
@@ -385,22 +421,23 @@ public class GestorDeArchivos {
 
         Enumeration en = nodo.children();
         while (en.hasMoreElements()) {
-            DefaultMutableTreeNode child = (DefaultMutableTreeNode) en.nextElement();
-            Object obj = child.getUserObject();
+            Object obj = ((DefaultMutableTreeNode) en.nextElement()).getUserObject();
             if (obj instanceof File) {
                 archivos.add((File) obj);
             }
         }
 
         Comparator<File> cmp;
+
         switch (ordenKey.toLowerCase()) {
+
             case "fecha":
                 cmp = Comparator.comparingLong(File::lastModified).reversed();
                 break;
 
             case "tipo":
                 cmp = Comparator
-                        .comparing(File::isDirectory).reversed() // primero carpetas
+                        .comparing(File::isDirectory).reversed()
                         .thenComparing(f -> getExtension(f.getName()));
                 break;
 
@@ -408,19 +445,16 @@ public class GestorDeArchivos {
                 cmp = Comparator.comparingLong(File::length).reversed();
                 break;
 
-            default: // nombre
+            default:
                 cmp = Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER);
         }
 
         archivos.sort(cmp);
 
         nodo.removeAllChildren();
+
         for (File f : archivos) {
-            if (f.isDirectory()) {
-                nodo.add(crearNodoRecursivo(f));
-            } else {
-                nodo.add(new DefaultMutableTreeNode(f));
-            }
+            nodo.add(new DefaultMutableTreeNode(f));  // SOLO el File del item
         }
     }
 

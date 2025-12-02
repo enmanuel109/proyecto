@@ -116,7 +116,7 @@ public class Escritorio extends JFrame {
 
         JPanel indicadorDentro = new JPanel();
         indicadorDentro.setBackground(Color.GRAY);
-        indicadorDentro.setBounds(650 + 5, 7 + 25, 20, 3);
+        indicadorDentro.setBounds(655,32, 20, 3);
         indicadorDentro.setVisible(false);
         barraTareas.add(indicadorDentro);
 
@@ -362,7 +362,7 @@ public class Escritorio extends JFrame {
         // Scroll
         JScrollPane scroll = new JScrollPane(Files);
         fila2col2.add(scroll, BorderLayout.CENTER);
-
+        //botones
         btnCrear.addActionListener(e -> {
             try {
                 gestor.crearElemento(this); // this = JFrame padre
@@ -427,32 +427,29 @@ public class Escritorio extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         contenido.add(fila1col2, gbc);
 
-        // ------------------- Fila 2 Columna 1 (botones lateral CON SCROLL) -------------------
+        // Fila 2 Columna
         JPanel panelBotones = new JPanel();
         panelBotones.setBackground(c3);
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
         panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // ICONOS DOCUMENTOS / IMAGENES / MUSICA
+        // ICONOS
         ImageIcon iconDoc = new ImageIcon("src/IMGS/Iconodoc.png");
         ImageIcon iconImg = new ImageIcon("src/IMGS/Iconoimagenes.png");
         ImageIcon iconMus = new ImageIcon("src/IMGS/IconoMusica.png");
 
-// Redimensionamos los iconos
         Image iDoc = iconDoc.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         Image iImg = iconImg.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
         Image iMus = iconMus.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
 
-// Se asignan los iconos ya escalados
         iconDoc = new ImageIcon(iDoc);
         iconImg = new ImageIcon(iImg);
         iconMus = new ImageIcon(iMus);
 
-// Los botones de carpeta
         JButton btnDoc = new JButton("  Documentos", iconDoc);
         JButton btnImg = new JButton("  Imágenes", iconImg);
         JButton btnMus = new JButton("  Música", iconMus);
-// Ajuste para que texto quede a la derecha del icono, estilo Windows
+        
         btnDoc.setHorizontalAlignment(SwingConstants.LEFT);
         btnImg.setHorizontalAlignment(SwingConstants.LEFT);
         btnMus.setHorizontalAlignment(SwingConstants.LEFT);
@@ -460,7 +457,6 @@ public class Escritorio extends JFrame {
         btnDoc.setIconTextGap(10);
         btnImg.setIconTextGap(10);
         btnMus.setIconTextGap(10);
-// acciones
         btnDoc.addActionListener(e -> {
             carpetaActual = "Documentos";
             cargarSoloCarpeta("Documentos");
@@ -474,7 +470,6 @@ public class Escritorio extends JFrame {
             cargarSoloCarpeta("Musica");
         });
 
-// estilo
         Color fondoFijo = new Color(200, 200, 200);
 
         for (JButton b : new JButton[]{btnDoc, btnImg, btnMus}) {
@@ -503,13 +498,12 @@ public class Escritorio extends JFrame {
             panelBotones.add(Box.createVerticalStrut(10));
         }
 
-// scroll lateral
         JScrollPane scrollBotones = new JScrollPane(panelBotones);
         scrollBotones.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollBotones.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scrollBotones.setBorder(null);
 
-// agregar al layout general
+        // agregar al layout general scroll
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0;
@@ -519,7 +513,7 @@ public class Escritorio extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         contenido.add(scrollBotones, gbc);
 
-        // ------------------- Fila 2 Columna 2 (JTree con scroll) -------------------
+        // Fila 2 Columna 2
         gbc.gridx = 1;
         gbc.gridy = 1;
         gbc.weightx = 1;
@@ -532,11 +526,10 @@ public class Escritorio extends JFrame {
         ventanaCarpeta.setSelected(true);
     }
 
-// ------------------- Método recursivo para crear nodos -------------------
+// Método recursivo para crear nodos
     private void cargarArbolCompleto() {
         File usuario = Sistem.CuentaActual;
 
-        // La raíz debe ser el File real
         DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
 
         raiz.add(cargarCarpeta(new File(usuario, "Documentos")));
@@ -575,7 +568,7 @@ public class Escritorio extends JFrame {
     Files.setModel(new DefaultTreeModel(raiz));
     Files.setRootVisible(true);
     Files.setShowsRootHandles(true);
-}
+    }
 
     public void limpiarCarpetaActual() {
         carpetaActual = null;
@@ -583,9 +576,5 @@ public class Escritorio extends JFrame {
 
     public static String getCarpetaActual() {
         return carpetaActual;
-    }
-
-    public static void main(String[] args) {
-        new Escritorio();
     }
 }
