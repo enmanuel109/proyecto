@@ -83,7 +83,7 @@ public class ArchivosUsuarios {
 
     private void crearAdminSiNoExiste() throws IOException {
         if (!usuarioExistente("ADMINISTRADOR")) {
-            agregarUsuario("administrador", "P123/");
+            agregarUsuario("ADMINISTRADOR", "P123/");
         }
     }
 
@@ -102,7 +102,7 @@ public class ArchivosUsuarios {
                 }
             }
 
-            return contador > 0;
+            return (contador > 0);
 
         } catch (IOException e) {
             return false;
