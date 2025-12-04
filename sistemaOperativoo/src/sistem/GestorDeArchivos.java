@@ -75,7 +75,7 @@ public class GestorDeArchivos {
         }
         
          if (esNombreProhibidoParaRenombrar(seleccionado)) {
-            JOptionPane.showMessageDialog(parent, "No puedes copiar '" + nombreNodo + "'.");
+            JOptionPane.showMessageDialog(parent, "No puedes Renombrar '" + nombreNodo + "'.");
             return false;
         }
 

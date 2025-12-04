@@ -83,7 +83,7 @@ public class ArchivosUsuarios {
 
     private void crearAdminSiNoExiste() throws IOException {
         if (!usuarioExistente("ADMINISTRADOR")) {
-            agregarUsuario("ADMINISTRADOR", "P123/");
+            agregarUsuario("administrador", "P123/");
         }
     }
 
@@ -97,7 +97,7 @@ public class ArchivosUsuarios {
                 String nombre = rusers.readUTF();   
                 rusers.readUTF();                  
 
-                if (!nombre.equals("ADMINISTRADOR")) {
+                if (!nombre.equals("administrador")) {
                     contador++;
                 }
             }
