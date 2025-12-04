@@ -438,7 +438,7 @@ public class GestorDeArchivos {
             return;
         }
 
-        // Encontrar nodo real dentro del árbol
+        // Encontrar nodo real dentro del arbol
         DefaultMutableTreeNode nodoDir = nodoPorFile(dir);
         if (nodoDir == null) {
             JOptionPane.showMessageDialog(null,
