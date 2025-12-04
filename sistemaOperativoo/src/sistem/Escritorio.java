@@ -4,6 +4,9 @@
  */
 package sistem;
 
+import editorTxt.EditorController;
+import editorTxt.EditorGUI;
+import editorTxt.EditorLogica;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -35,6 +38,8 @@ import javax.swing.Timer;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +52,10 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import reproductor.ReproductorGUI;
+import reproductor.ReproductorLogica;
+import reproductor.EstadoReproductor;
+import reproductor.ReproductorController;
 
 /**
  *
@@ -114,21 +123,41 @@ public class Escritorio extends JFrame {
         btnCarpeta.setBounds(650, 7, 30, 30);
         barraTareas.add(btnCarpeta);
 
-        JPanel indicadorDentro = new JPanel();
-        indicadorDentro.setBackground(Color.GRAY);
-        indicadorDentro.setBounds(655,32, 20, 3);
-        indicadorDentro.setVisible(false);
-        barraTareas.add(indicadorDentro);
+        JPanel indCarpeta = new JPanel();
+        indCarpeta.setBackground(Color.LIGHT_GRAY);
+        indCarpeta.setBounds(650, 40, 30, 3);
+        indCarpeta.setVisible(false);
+        barraTareas.add(indCarpeta);
 
-        JPanel indicadorSub = new JPanel();
-        indicadorSub.setBackground(Color.LIGHT_GRAY);
-        indicadorSub.setBounds(650, 40, 30, 3);
-        indicadorSub.setVisible(false);
-        barraTareas.add(indicadorSub);
+        JPanel indImg = new JPanel();
+        indImg.setBackground(Color.LIGHT_GRAY);
+        indImg.setBounds(700, 40, 30, 3);
+        indImg.setVisible(false);
+        barraTareas.add(indImg);
+
+        JPanel indMusica = new JPanel();
+        indMusica.setBackground(Color.LIGHT_GRAY);
+        indMusica.setBounds(750, 40, 30, 3);
+        indMusica.setVisible(false);
+        barraTareas.add(indMusica);
+
+        JPanel indDoc = new JPanel();
+        indDoc.setBackground(Color.LIGHT_GRAY);
+        indDoc.setBounds(800, 40, 30, 3);
+        indDoc.setVisible(false);
+        barraTareas.add(indDoc);
+
+        JPanel indCmd = new JPanel();
+        indCmd.setBackground(Color.LIGHT_GRAY);
+        indCmd.setBounds(850, 40, 30, 3);
+        indCmd.setVisible(false);
+        barraTareas.add(indCmd);
 
         btnCarpeta.addActionListener(e -> {
+            indCarpeta.setVisible(true);
+
             try {
-                abrirCarpeta(indicadorDentro, indicadorSub);
+                abrirCarpeta(indCarpeta);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -153,6 +182,23 @@ public class Escritorio extends JFrame {
         btnMusica.setBorderPainted(false);
         btnMusica.setBounds(750, 7, 30, 30);
         barraTareas.add(btnMusica);
+        btnMusica.addActionListener(e -> {
+
+            try {
+                ReproductorLogica logica = new ReproductorLogica();
+                ReproductorGUI vista = new ReproductorGUI(logica, indMusica);
+
+                new ReproductorController(logica, vista);
+                indMusica.setVisible(true);
+
+                escritorio.add(vista);
+                vista.setVisible(true);
+                vista.setSelected(true);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         ImageIcon iconoDocumentos = new ImageIcon("src/IMGS/Iconodoc.png");
         Image imgDoc = iconoDocumentos.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
@@ -163,6 +209,21 @@ public class Escritorio extends JFrame {
         btnDoc.setBorderPainted(false);
         btnDoc.setBounds(800, 5, 30, 30);
         barraTareas.add(btnDoc);
+        btnDoc.addActionListener(e -> {
+            try {
+                EditorLogica logica = new EditorLogica();
+                EditorGUI gui = new EditorGUI(indDoc);
+                EditorController controller = new EditorController(gui, logica);
+                indDoc.setVisible(true);
+
+                escritorio.add(gui);
+                gui.setVisible(true);
+                gui.setSelected(true);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         ImageIcon iconoCmd = new ImageIcon("src/IMGS/LogoCmd.png");
         Image imgCmd = iconoCmd.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
@@ -173,11 +234,12 @@ public class Escritorio extends JFrame {
         btnCmd.setBorderPainted(false);
         btnCmd.setBounds(850, 5, 30, 30);
         barraTareas.add(btnCmd);
+
         btnCmd.addActionListener(e -> {
-            cmd consola = new cmd(Sistem.CuentaActual);
+            cmd consola = new cmd(LogIn.CuentaActual, indCmd);
             escritorio.add(consola);
             consola.setVisible(true);
-
+            indCmd.setVisible(true);
             try {
                 consola.setSelected(true);
             } catch (Exception ex) {
@@ -192,7 +254,7 @@ public class Escritorio extends JFrame {
         cerrarWindows.addActionListener(e -> System.exit(0));
         cerrarSesion.addActionListener(e -> {
             this.dispose();
-            new Sistem();
+            new LogIn();
         });
         menu.add(cerrarWindows);
         menu.add(cerrarSesion);
@@ -226,14 +288,12 @@ public class Escritorio extends JFrame {
         setVisible(true);
     }
 
-    private void abrirCarpeta(JPanel indicadorDentro, JPanel indicadorSub) throws PropertyVetoException {
+    private void abrirCarpeta(JPanel indicadorSub) throws PropertyVetoException {
         ventanaCarpeta = new JInternalFrame("Carpetas", true, true, true, true);
         ventanaCarpeta.setSize(800, 600);
         ventanaCarpeta.setLocation(350, 50);
         ventanaCarpeta.setMaximum(true);
         escritorio.add(ventanaCarpeta);
-
-        indicadorDentro.setVisible(true);
 
         ventanaCarpeta.addInternalFrameListener(new InternalFrameAdapter() {
             @Override
@@ -248,7 +308,6 @@ public class Escritorio extends JFrame {
 
             @Override
             public void internalFrameClosing(InternalFrameEvent e) {
-                indicadorDentro.setVisible(false);
                 indicadorSub.setVisible(false);
             }
         });
@@ -261,7 +320,7 @@ public class Escritorio extends JFrame {
         Color c3 = new Color(120, 120, 120);
         Color c4 = new Color(90, 90, 90);
 
-        // ------------------- Fila 1 Columna 1 -------------------
+        // Fila 1 Columna 1
         JPanel fila1col1 = new JPanel();
         fila1col1.setBackground(c1);
         gbc.gridx = 0;
@@ -273,7 +332,7 @@ public class Escritorio extends JFrame {
         gbc.ipady = 40;
         contenido.add(fila1col1, gbc);
 
-        // ------------------- Fila 1 Columna 2 (botones top + buscar) -------------------
+        //Fila 1 Columna 2 
         JPanel fila1col2 = new JPanel(new GridBagLayout());
         fila1col2.setBackground(c2);
 
@@ -332,7 +391,7 @@ public class Escritorio extends JFrame {
 
             fila1col2.add(b, gbcTop);
         }
-        // ------------------- Crear y configurar el área del árbol -------------------
+        // Crear y configurar el area del árbol
         JPanel fila2col2 = new JPanel(new BorderLayout());
         fila2col2.setBackground(c4);
 
@@ -344,7 +403,6 @@ public class Escritorio extends JFrame {
         // Crear gestor para manejar todos los botones
         gestor = new GestorDeArchivos(Files, this);
 
-        // ---- HEADER PARA EL ÁRBOL ----
         JPanel header = new JPanel(new GridLayout(1, 4));
         header.setBackground(new Color(70, 70, 70));
 
@@ -365,7 +423,7 @@ public class Escritorio extends JFrame {
         //botones
         btnCrear.addActionListener(e -> {
             try {
-                gestor.crearElemento(this); // this = JFrame padre
+                gestor.crearElemento(this);
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error creando: " + ex.getMessage());
@@ -392,14 +450,35 @@ public class Escritorio extends JFrame {
             }
         });
 
-        // Ordenar - por ejemplo menú o botones
         Component[] opciones = menuOrdenar.getComponents();
 
-        ((JMenuItem) opciones[0]).addActionListener(ev -> gestor.ordenarSeleccionado("nombre"));
-        ((JMenuItem) opciones[1]).addActionListener(ev -> gestor.ordenarSeleccionado("fecha"));
-        ((JMenuItem) opciones[2]).addActionListener(ev -> gestor.ordenarSeleccionado("tipo"));
-        ((JMenuItem) opciones[3]).addActionListener(ev -> gestor.ordenarSeleccionado("tamano"));
+        ((JMenuItem) opciones[0]).addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gestor.ordenarSeleccionado("nombre");
+            }
+        });
 
+        ((JMenuItem) opciones[1]).addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gestor.ordenarSeleccionado("fecha");
+            }
+        });
+
+        ((JMenuItem) opciones[2]).addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gestor.ordenarSeleccionado("tipo");
+            }
+        });
+
+        ((JMenuItem) opciones[3]).addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gestor.ordenarSeleccionado("tamano");
+            }
+        });
         btnOrganizar.addActionListener(e -> {
             limpiarCarpetaActual();      // ← Quita la carpeta seleccionada
             Files.clearSelection();      // ← Quita selección en el JTree
@@ -449,7 +528,7 @@ public class Escritorio extends JFrame {
         JButton btnDoc = new JButton("  Documentos", iconDoc);
         JButton btnImg = new JButton("  Imágenes", iconImg);
         JButton btnMus = new JButton("  Música", iconMus);
-        
+
         btnDoc.setHorizontalAlignment(SwingConstants.LEFT);
         btnImg.setHorizontalAlignment(SwingConstants.LEFT);
         btnMus.setHorizontalAlignment(SwingConstants.LEFT);
@@ -528,7 +607,7 @@ public class Escritorio extends JFrame {
 
 // Método recursivo para crear nodos
     private void cargarArbolCompleto() {
-        File usuario = Sistem.CuentaActual;
+        File usuario = LogIn.CuentaActual;
 
         DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
 
@@ -559,15 +638,15 @@ public class Escritorio extends JFrame {
     }
 
     private void cargarSoloCarpeta(String nombreCarpeta) {
-    File usuario = Sistem.CuentaActual;
-    File carpeta = new File(usuario, nombreCarpeta);
+        File usuario = LogIn.CuentaActual;
+        File carpeta = new File(usuario, nombreCarpeta);
 
-    DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
-    raiz.add(cargarCarpeta(carpeta));
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
+        raiz.add(cargarCarpeta(carpeta));
 
-    Files.setModel(new DefaultTreeModel(raiz));
-    Files.setRootVisible(true);
-    Files.setShowsRootHandles(true);
+        Files.setModel(new DefaultTreeModel(raiz));
+        Files.setRootVisible(true);
+        Files.setShowsRootHandles(true);
     }
 
     public void limpiarCarpetaActual() {

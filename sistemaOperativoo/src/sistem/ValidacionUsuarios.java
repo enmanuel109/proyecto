@@ -38,18 +38,5 @@ public class ValidacionUsuarios {
     }
 
 
-    public boolean ValidarName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return false;
-        }
-
-        for (Usuario JuTem : Usuario.usuarios) {
-            if (name.equalsIgnoreCase(JuTem.getNombre())) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
 }

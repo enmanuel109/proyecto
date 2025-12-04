@@ -13,8 +13,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import javax.swing.JInternalFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 import javax.swing.text.BadLocationException;
 
 /**
@@ -25,17 +28,14 @@ public class cmd extends JInternalFrame {
 
     private final JTextArea area;
     private int inicioEntrada = 0;
-    private final ComandosFileCmd manejador;  // Ahora usa ComandosFileCmd
-
-    // ==============================
-    //   CONSTRUCTOR (RECIBE CARPETA USUARIO)
-    // ==============================
-    public cmd(File carpetaUsuario) {
+    private final ComandosFileCmd manejador;  
+   
+    public cmd(File carpetaUsuario,JPanel indicadorSub) {
         super("CMD Insano", true, true, true, true);
         setSize(1100, 650);
         setLocation(20, 20);
 
-        // RUTA INICIAL = carpeta del usuario (Unidad_Z/USUARIO)
+        // Rura inicial = carpeta del usuario 
         manejador = new ComandosFileCmd(carpetaUsuario.getAbsolutePath());
 
         area = new JTextArea();
@@ -56,9 +56,23 @@ public class cmd extends JInternalFrame {
 
         writePrompt();
 
-        // ==============================
+        super.addInternalFrameListener(new InternalFrameAdapter() {
+            @Override
+            public void internalFrameActivated(InternalFrameEvent e) {
+                indicadorSub.setVisible(true);
+            }
+
+            @Override
+            public void internalFrameDeactivated(InternalFrameEvent e) {
+                indicadorSub.setVisible(false);
+            }
+
+            @Override
+            public void internalFrameClosing(InternalFrameEvent e) {
+                indicadorSub.setVisible(false);
+            }
+        });
         // CONTROL DEL TECLADO
-        // ==============================
         area.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -106,9 +120,7 @@ public class cmd extends JInternalFrame {
         setVisible(true);
     }
 
-    // ==============================
-    // MÉTODOS AUXILIARES
-    // ==============================
+    // MeTODOS AUXILIARES
     private void appendText(String s) {
         area.append(s);
         area.setCaretPosition(area.getDocument().getLength());
@@ -127,9 +139,7 @@ public class cmd extends JInternalFrame {
 }
 
 
-    // ==============================
     // PROCESAR COMANDOS
-    // ==============================
     private void processCommand(String raw) {
         if (raw == null || raw.isEmpty()) {
             return;
@@ -157,9 +167,7 @@ public class cmd extends JInternalFrame {
                     appendText("  exit\n");
                     break;
 
-                // ==============================
-                //         cd 
-                // ==============================
+                //cd 
                 case "cd":
                     if (parts.length < 2) {
                         appendText(manejador.getPathActual().getAbsolutePath() + "\n");
@@ -193,41 +201,31 @@ public class cmd extends JInternalFrame {
                     }
                     break;
 
-                // ==============================
                 // mkdir
-                // ==============================
                 case "mkdir":
                     if (parts.length < 2) appendText("Uso: mkdir <carpeta>\n");
                     else appendText(manejador.mkdir(parts[1]) + "\n");
                     break;
 
-                // ==============================
                 // mfile
-                // ==============================
                 case "mfile":
                     if (parts.length < 2) appendText("Uso: mfile <archivo>\n");
                     else appendText(manejador.mfile(parts[1]) + "\n");
                     break;
 
-                // ==============================
                 // rm
-                // ==============================
                 case "rm":
                     if (parts.length < 2) appendText("Uso: rm <nombre>\n");
                     else appendText(manejador.rm(parts[1]) + "\n");
                     break;
 
-                // ==============================
                 // dir
-                // ==============================
                 case "dir":
                     String argDir = parts.length < 2 ? "." : raw.substring(raw.indexOf(' ') + 1).trim();
                     appendText(manejador.dir(argDir) + "\n");
                     break;
 
-                // ==============================
                 // wr
-                // ==============================
                 case "wr":
                     if (parts.length < 3) {
                         appendText("Uso: wr <archivo> <texto>\n");
@@ -239,31 +237,23 @@ public class cmd extends JInternalFrame {
                     }
                     break;
 
-                // ==============================
                 // rd
-                // ==============================
                 case "rd":
                     if (parts.length < 2) appendText("Uso: rd <archivo>\n");
                     else appendText(manejador.leerTexto(parts[1]) + "\n");
                     break;
 
-                // ==============================
                 // time
-                // ==============================
                 case "time":
                     appendText(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")) + "\n");
                     break;
 
-                // ==============================
                 // date
-                // ==============================
                 case "date":
                     appendText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + "\n");
                     break;
 
-                // ==============================
                 // cls
-                // ==============================
                 case "cls":
                     area.setText("");
                     appendText("Microsoft Windows [Versión 10.0.22621.521]\n");
@@ -271,9 +261,7 @@ public class cmd extends JInternalFrame {
                     appendText("Si ocupas ayuda usa el comando 'help'.\n");
                     break;
 
-                // ==============================
                 // exit
-                // ==============================
                 case "exit":
                     dispose();
                     break;
