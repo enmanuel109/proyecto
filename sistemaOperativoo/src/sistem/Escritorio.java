@@ -628,9 +628,15 @@ public class Escritorio extends JFrame {
 
         DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
 
-        raiz.add(cargarCarpeta(new File(usuario, "Documentos")));
-        raiz.add(cargarCarpeta(new File(usuario, "Musica")));
-        raiz.add(cargarCarpeta(new File(usuario, "Imagenes")));
+        File[] carpetas = usuario.listFiles();
+
+        if (carpetas != null) {
+            for (File f : carpetas) {
+                if (f.isDirectory()) {
+                    raiz.add(cargarCarpeta(f));
+                }
+            }
+        }
 
         Files.setModel(new DefaultTreeModel(raiz));
         Files.setRootVisible(true);

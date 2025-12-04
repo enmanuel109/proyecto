@@ -65,7 +65,7 @@ public class GestorDeArchivos {
         //Obtener solo el nombre del archivo
         String nombreNodo;
         File seleccionado = null;
-
+       
         if (userObj instanceof File) {
             seleccionado = (File) userObj;
             nombreNodo = seleccionado.getName();
@@ -73,10 +73,9 @@ public class GestorDeArchivos {
             JOptionPane.showMessageDialog(parent, "Elemento invalido.");
             return false;
         }
-
-        // bloquear renombrado de carpetas principales y del usuario
-        if (esNombreProhibidoParaRenombrar(seleccionado)) {
-            JOptionPane.showMessageDialog(parent, "No puedes renombrar '" + nombreNodo + "'.");
+        
+         if (esNombreProhibidoParaRenombrar(seleccionado)) {
+            JOptionPane.showMessageDialog(parent, "No puedes copiar '" + nombreNodo + "'.");
             return false;
         }
 
@@ -223,13 +222,8 @@ public class GestorDeArchivos {
 
         String nombre = f.getName().toLowerCase();
 
-        if (LogIn.CuentaActual != null && f.equals(LogIn.CuentaActual)) {
-            JOptionPane.showMessageDialog(parent, "No puedes copiar la carpeta del usuario.");
-            return false;
-        }
-
-        if (nombre.equals("documentos") || nombre.equals("musica") || nombre.equals("imagenes")) {
-            JOptionPane.showMessageDialog(parent, "No puedes copiar esta carpeta principal.");
+        if (esNombreProhibidoParaRenombrar(f)) {
+            JOptionPane.showMessageDialog(parent, "No puedes copiar '" + f.getName() + "'.");
             return false;
         }
 
@@ -251,9 +245,7 @@ public class GestorDeArchivos {
         File destinoDir;
 
         if (sel == null) {
-            JOptionPane.showMessageDialog(parent,
-                    "Seleccione Documentos, Musica o Imagenes para pegar.");
-            return false;
+            destinoDir = LogIn.CuentaActual;
         }
 
         File seleccionado = fileDesdePath(sel);
@@ -273,12 +265,11 @@ public class GestorDeArchivos {
 
         String nombre = destinoDir.getName().toLowerCase();
 
-        if (!estaDentroDeCarpetaPermitida(destinoDir)) {
+        /* if (!estaDentroDeCarpetaPermitida(destinoDir)) {
             JOptionPane.showMessageDialog(parent,
                     "Solo puedes pegar dentro de Documentos, Musica o Imagenes (o dentro de sus subcarpetas).");
             return false;
-        }
-
+        }*/
         // Crear archivo destino
         File nuevo = new File(destinoDir, copiadoTemporal.getName());
 
@@ -382,13 +373,9 @@ public class GestorDeArchivos {
 
         String nombre = seleccionado.getName().toLowerCase();
 
-        if (LogIn.CuentaActual != null && seleccionado.equals(LogIn.CuentaActual)) {
-            JOptionPane.showMessageDialog(parent, "No puedes eliminar la carpeta del usuario");
-            return false;
-        }
-
-        if (nombre.equals("documentos") || nombre.equals("musica") || nombre.equals("imagenes")) {
-            JOptionPane.showMessageDialog(parent, "No puedes eliminar esta carpeta principal.");
+        // bloquear renombrado de carpetas principales y del usuario
+        if (esNombreProhibidoParaRenombrar(seleccionado)) {
+            JOptionPane.showMessageDialog(parent, "No puedes Eliminar '" + nombre + "'.");
             return false;
         }
 
