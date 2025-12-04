@@ -31,7 +31,8 @@ public class ReproductorLogica {
     private EstadoReproductor estado = EstadoReproductor.SIN_ARCHIVO;
 
     public ReproductorLogica() {
-        carpetaMiMusica = new File("MiMusica");
+        String nombre=LogIn.CuentaActual.getName();
+        carpetaMiMusica = new File("Unidad_Z/"+nombre+"/Musica");
         if (!carpetaMiMusica.exists()) {
             carpetaMiMusica.mkdirs();
         }

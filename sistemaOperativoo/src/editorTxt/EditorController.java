@@ -13,6 +13,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+import sistem.LogIn;
 
 /**
  *
@@ -171,41 +172,20 @@ public class EditorController {
     private void accionGuardar() {
         try {
             if (archivoActual == null) {
-                if (chooser.showSaveDialog(gui) != JFileChooser.APPROVE_OPTION) {
-                    return;
-                }
+                String nombre =JOptionPane.showInputDialog(gui,"Escriba un nombre para el archivo.");
+                String nombreCuenta=LogIn.CuentaActual.getName();
+                guardarEnArchivo(new File("Unidad_Z/"+nombreCuenta+"/Documentos/"+nombre+".txt"));
 
-                File archivo = chooser.getSelectedFile();
-                if (!archivo.getName().toLowerCase().endsWith(".txt")) {
-                    archivo = new File(archivo.getAbsolutePath() + ".txt");
-                }
-
-                guardarEnArchivo(archivo);
-
-                JOptionPane.showMessageDialog(gui, "Archivo guardado correctamente. Se aplicaron los cambios");
+                JOptionPane.showMessageDialog(gui, "Archivo guardado en "+nombreCuenta+"/Documentos. Se aplicaron los cambios");
 
             } else {
                 guardarEnArchivo(archivoActual);
-
                 JOptionPane.showMessageDialog(gui, "Archivo guardado correctamente. Se aplicaron los cambios");
             }
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(gui, "Error al guardar archivo");
         }
-    }
-
-    private void accionGuardarComoTxt() {
-        if (chooser.showSaveDialog(gui) != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
-
-        File archivo = chooser.getSelectedFile();
-        if (!archivo.getName().toLowerCase().endsWith(".txt")) {
-            archivo = new File(archivo.getAbsolutePath() + ".txt");
-        }
-
-        guardarEnArchivo(archivo);
     }
 
     private void guardarEnArchivo(File archivo) {

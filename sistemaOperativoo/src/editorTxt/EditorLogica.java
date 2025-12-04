@@ -38,7 +38,15 @@ public class EditorLogica {
     }
 
     private File archivoFmt(File archivoTxt) {
-        return new File(archivoTxt.getAbsolutePath() + ".fmt");
+        File parentDir = archivoTxt.getParentFile();
+        File fmtDir = new File(parentDir, ".fmt"); 
+
+        if (!fmtDir.exists()) {
+            fmtDir.mkdirs();
+        }
+
+        String baseName = archivoTxt.getName();
+        return new File(fmtDir, baseName + ".fmt");
     }
 
     public void guardarFmt(File archivoTxt, StyledDocument doc) {
