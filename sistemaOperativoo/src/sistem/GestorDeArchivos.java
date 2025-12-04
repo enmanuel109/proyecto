@@ -417,7 +417,7 @@ public class GestorDeArchivos {
 
     //  ORDENAR 
     //nombre, fecha, tipo, tamano
-    public void ordenarSeleccionado(String ordenKey) {
+    public void ordenarSeleccionado(String tipoOrd) {
 
         TreePath sel = arbol.getSelectionPath();
         if (sel == null) {
@@ -427,13 +427,12 @@ public class GestorDeArchivos {
         }
 
         // Archivo o carpeta seleccionada
-        File fsel = fileDesdePath(sel);
-        if (fsel == null) {
+        File ArcSel = fileDesdePath(sel);
+        if (ArcSel == null) {
             return;
         }
 
-        // Si selecciono un archivo, ordenar el padre
-        File dir = fsel.isDirectory() ? fsel : fsel.getParentFile();
+        File dir = ArcSel.isDirectory() ? ArcSel : ArcSel.getParentFile();
         if (dir == null || !dir.exists()) {
             return;
         }
@@ -446,25 +445,25 @@ public class GestorDeArchivos {
             return;
         }
 
-        ordenarNodoPorCriterio(nodoDir, ordenKey);
+        ordenarNodoPorCriterio(nodoDir, tipoOrd);
 
         DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
         modelo.nodeStructureChanged(nodoDir);
 
-        // Mantener abierta la carpeta
         SwingUtilities.invokeLater(() -> {
             arbol.expandPath(new TreePath(nodoDir.getPath()));
             arbol.setSelectionPath(new TreePath(nodoDir.getPath()));
         });
     }
 
-    private void ordenarNodoPorCriterio(DefaultMutableTreeNode nodo, String ordenKey) {
+    private void ordenarNodoPorCriterio(DefaultMutableTreeNode nodo, String tipoOrd) {
 
         ArrayList<File> archivos = new ArrayList<>();
 
-        Enumeration en = nodo.children();
-        while (en.hasMoreElements()) {
-            Object obj = ((DefaultMutableTreeNode) en.nextElement()).getUserObject();
+        for (int i = 0; i < nodo.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) nodo.getChildAt(i);
+
+            Object obj = child.getUserObject();
             if (obj instanceof File) {
                 archivos.add((File) obj);
             }
@@ -472,32 +471,61 @@ public class GestorDeArchivos {
 
         Comparator<File> cmp;
 
-        switch (ordenKey.toLowerCase()) {
+        switch (tipoOrd.toLowerCase()) {
 
             case "fecha":
-                cmp = Comparator.comparingLong(File::lastModified).reversed();
+                cmp = new Comparator<File>() {
+                    @Override
+                    public int compare(File f1, File f2) {
+                        return Long.compare(f2.lastModified(), f1.lastModified());
+                    }
+                };
                 break;
 
             case "tipo":
-                cmp = Comparator
-                        .comparing(File::isDirectory).reversed()
-                        .thenComparing(f -> getExtension(f.getName()));
+                cmp = new Comparator<File>() {
+                    @Override
+                    public int compare(File f1, File f2) {
+                        // Primero carpetas
+                        if (f1.isDirectory() && !f2.isDirectory()) {
+                            return -1;
+                        }
+                        if (!f1.isDirectory() && f2.isDirectory()) {
+                            return 1;
+                        }
+
+                        // Luego por extensión
+                        String ext1 = getExtension(f1.getName());
+                        String ext2 = getExtension(f2.getName());
+                        return ext1.compareToIgnoreCase(ext2);
+                    }
+                };
                 break;
 
             case "tamano":
-                cmp = Comparator.comparingLong(File::length).reversed();
+                cmp = new Comparator<File>() {
+                    @Override
+                    public int compare(File f1, File f2) {
+                        return Long.compare(f2.length(), f1.length());
+                    }
+                };
                 break;
 
-            default:
-                cmp = Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER);
+            default: // nombre
+                cmp = new Comparator<File>() {
+                    @Override
+                    public int compare(File f1, File f2) {
+                        return f1.getName().compareToIgnoreCase(f2.getName());
+                    }
+                };
         }
 
-        archivos.sort(cmp);
+        Collections.sort(archivos, cmp);
 
         nodo.removeAllChildren();
 
         for (File f : archivos) {
-            nodo.add(new DefaultMutableTreeNode(f));  // SOLO el File del item
+            nodo.add(new DefaultMutableTreeNode(f));
         }
     }
 
@@ -704,7 +732,7 @@ public class GestorDeArchivos {
     // refrescar el nodo padre 
     private void refrescarNodoPadre(TreePath parentPath) {
         if (parentPath == null) {
-            organizar(); // recargar todo
+            organizar();
             return;
         }
         File parentFile = fileDesdePath(parentPath);
@@ -732,8 +760,12 @@ public class GestorDeArchivos {
         File[] hijos = dir.listFiles();
         if (hijos != null) {
 
-            Arrays.sort(hijos, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
-
+            Arrays.sort(hijos, new Comparator<File>() {
+                @Override
+                public int compare(File f1, File f2) {
+                    return f1.getName().compareToIgnoreCase(f2.getName());
+                }
+            });
             for (File h : hijos) {
                 if (h.isDirectory()) {
                     nodo.add(crearNodoRecursivo(h));
