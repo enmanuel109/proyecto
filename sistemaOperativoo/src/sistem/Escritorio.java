@@ -4,6 +4,7 @@
  */
 package sistem;
 
+import GaleriaImagenes.GaleriaImagenesGui;
 import editorTxt.EditorController;
 import editorTxt.EditorGUI;
 import editorTxt.EditorLogica;
@@ -172,6 +173,17 @@ public class Escritorio extends JFrame {
         btnImg.setBorderPainted(false);
         btnImg.setBounds(700, 7, 30, 30);
         barraTareas.add(btnImg);
+        btnImg.addActionListener(e -> {
+            GaleriaImagenesGui gal = new GaleriaImagenesGui(indImg);
+            escritorio.add(gal);
+            gal.setVisible(true);
+            indImg.setVisible(true);
+            try {
+                gal.setSelected(true);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         ImageIcon iconoMusica = new ImageIcon("src/IMGS/IconoMusica.png");
         Image imgMusica = iconoMusica.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
@@ -340,6 +352,7 @@ public class Escritorio extends JFrame {
         JButton btnCrear = new JButton("Crear");
         JButton btnCopiar = new JButton("Copiar");
         JButton btnPegar = new JButton("Pegar");
+        JButton btnEliminar = new JButton("Eliminar");
         JButton btnOrganizar = new JButton("Organizar");
         JButton btnOrdenar = new JButton("Ordenar *");
         JTextField txtBuscar = new JTextField(15);
@@ -351,7 +364,7 @@ public class Escritorio extends JFrame {
         menuOrdenar.add(new JMenuItem("Tamaño"));
         btnOrdenar.addActionListener(e -> menuOrdenar.show(btnOrdenar, 0, btnOrdenar.getHeight()));
 
-        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnOrganizar, btnOrdenar};
+        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnEliminar, btnOrganizar, btnOrdenar};
         Color fondoFijoTop = new Color(180, 180, 180);
 
         GridBagConstraints gbcTop = new GridBagConstraints();
@@ -439,6 +452,10 @@ public class Escritorio extends JFrame {
             }
         });
 
+        btnEliminar.addActionListener(e -> {
+            gestor.eliminarSeleccionado(this);
+        });
+
         btnCopiar.addActionListener(e -> gestor.copiarSeleccionado(this));
 
         btnPegar.addActionListener(e -> {
@@ -480,9 +497,9 @@ public class Escritorio extends JFrame {
             }
         });
         btnOrganizar.addActionListener(e -> {
+            gestor.organizarCompleto();          // ← Ejecuta lo que ya hacía
             limpiarCarpetaActual();      // ← Quita la carpeta seleccionada
             Files.clearSelection();      // ← Quita selección en el JTree
-            gestor.organizar();          // ← Ejecuta lo que ya hacía
         });
 // Buscar por texto (txtBuscar)
         txtBuscar.addActionListener(ev -> {
@@ -526,8 +543,8 @@ public class Escritorio extends JFrame {
         iconMus = new ImageIcon(iMus);
 
         JButton btnDoc = new JButton("  Documentos", iconDoc);
-        JButton btnImg = new JButton("  Imágenes", iconImg);
-        JButton btnMus = new JButton("  Música", iconMus);
+        JButton btnImg = new JButton("  Imagenes", iconImg);
+        JButton btnMus = new JButton("  Musica", iconMus);
 
         btnDoc.setHorizontalAlignment(SwingConstants.LEFT);
         btnImg.setHorizontalAlignment(SwingConstants.LEFT);
@@ -605,7 +622,7 @@ public class Escritorio extends JFrame {
         ventanaCarpeta.setSelected(true);
     }
 
-// Método recursivo para crear nodos
+// Funcion recursivo para crear nodos
     private void cargarArbolCompleto() {
         File usuario = LogIn.CuentaActual;
 

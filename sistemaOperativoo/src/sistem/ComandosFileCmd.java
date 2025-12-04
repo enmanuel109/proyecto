@@ -48,10 +48,10 @@ public class ComandosFileCmd {
 
     public String mkdir(String nombre) {
         if (nombre == null || nombre.trim().isEmpty()) {
-            return "Error: nombre no válido";
+            return "Error: nombre no valido";
         }
         if (pathActual == null || !pathActual.exists() || !pathActual.isDirectory()) {
-            return "Error: ruta actual no válida";
+            return "Error: ruta actual no valida";
         }
         File objetivo = new File(pathActual, nombre);
         if (objetivo.exists()) {

@@ -31,7 +31,6 @@ public class GestorDeArchivos {
         this.ventana = ventana;
     }
 
-
     public File fileDesdePath(TreePath path) {
         if (path == null) {
             return null;
@@ -341,8 +340,7 @@ public class GestorDeArchivos {
                     copiarRecursivoSimple(h, nuevoDestino);
                 }
             }
-        } 
-        else {
+        } else {
             Files.copy(
                     origen.toPath(),
                     destino.toPath(),
@@ -364,6 +362,57 @@ public class GestorDeArchivos {
             }
         }
         return f.delete();
+    }
+
+    public boolean eliminarSeleccionado(JFrame parent) {
+
+        TreePath sel = arbol.getSelectionPath();
+
+        if (sel == null) {
+            JOptionPane.showMessageDialog(parent, "Seleccione un archivo o carpeta.");
+            return false;
+        }
+
+        File seleccionado = fileDesdePath(sel);
+
+        if (seleccionado == null || !seleccionado.exists()) {
+            JOptionPane.showMessageDialog(parent, "Elemento invalido.");
+            return false;
+        }
+
+        String nombre = seleccionado.getName().toLowerCase();
+
+        if (LogIn.CuentaActual != null && seleccionado.equals(LogIn.CuentaActual)) {
+            JOptionPane.showMessageDialog(parent, "No puedes eliminar la carpeta del usuario");
+            return false;
+        }
+
+        if (nombre.equals("documentos") || nombre.equals("musica") || nombre.equals("imagenes")) {
+            JOptionPane.showMessageDialog(parent, "No puedes eliminar esta carpeta principal.");
+            return false;
+        }
+
+        int r = JOptionPane.showConfirmDialog(
+                parent,
+                "¿Estás seguro de eliminar:\n" + seleccionado.getName() + "?",
+                "Eliminar",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (r != JOptionPane.YES_OPTION) {
+            return false;
+        }
+        boolean ok = borrarRecursivo(seleccionado);
+
+        if (!ok) {
+            JOptionPane.showMessageDialog(parent, "No se pudo eliminar");
+            return false;
+        }
+
+        refrescarNodoPadre(sel.getParentPath());
+
+        JOptionPane.showMessageDialog(parent, "Eliminado correctamente.");
+        return true;
     }
 
     //  ORDENAR 
@@ -412,7 +461,7 @@ public class GestorDeArchivos {
     private void ordenarNodoPorCriterio(DefaultMutableTreeNode nodo, String ordenKey) {
 
         ArrayList<File> archivos = new ArrayList<>();
-        
+
         Enumeration en = nodo.children();
         while (en.hasMoreElements()) {
             Object obj = ((DefaultMutableTreeNode) en.nextElement()).getUserObject();
@@ -460,6 +509,73 @@ public class GestorDeArchivos {
         arbol.setModel(modelo);
         arbol.setRootVisible(true);
         arbol.setShowsRootHandles(true);
+    }
+
+    public void organizarCompleto() {
+        TreePath sel = arbol.getSelectionPath();
+
+        if (sel == null) {
+            JOptionPane.showMessageDialog(null, "Seleccione una carpeta para organizar.");
+            return;
+        }
+
+        File carpetaBase = fileDesdePath(sel);
+
+        if (carpetaBase == null || !carpetaBase.isDirectory()) {
+            JOptionPane.showMessageDialog(null, "Seleccione una carpeta válida.");
+            return;
+        }
+
+        // Crear carpetas destino
+        File carpetaImagenes = new File(carpetaBase, "Imagenes");
+        File carpetaDocumentos = new File(carpetaBase, "Documentos");
+        File carpetaMusica = new File(carpetaBase, "Musica");
+
+        if (!carpetaImagenes.exists()) {
+            carpetaImagenes.mkdirs();
+        }
+        if (!carpetaDocumentos.exists()) {
+            carpetaDocumentos.mkdirs();
+        }
+        if (!carpetaMusica.exists()) {
+            carpetaMusica.mkdirs();
+        }
+
+        File[] archivos = carpetaBase.listFiles();
+        if (archivos == null) {
+            return;
+        }
+
+        for (File f : archivos) {
+
+            if (f.isDirectory()) {
+                continue;
+            }
+            String nombre = f.getName().toLowerCase();
+
+            File destino = null;
+
+            if (nombre.endsWith(".jpg") || nombre.endsWith(".png") || nombre.endsWith(".jpeg") || nombre.endsWith(".gif")) {
+                destino = new File(carpetaImagenes, f.getName());
+            } else if (nombre.endsWith(".mp3") || nombre.endsWith(".wav")) {
+                destino = new File(carpetaMusica, f.getName());
+            } else if (nombre.endsWith(".txt") || nombre.endsWith(".pdf") || nombre.endsWith(".docx")) {
+                destino = new File(carpetaDocumentos, f.getName());
+            }
+
+            if (destino != null) {
+                try {
+                    Files.move(f.toPath(), destino.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
+        DefaultMutableTreeNode raiz = crearNodoRecursivo(LogIn.CuentaActual);
+        modelo.setRoot(raiz);
+        modelo.reload();
     }
 
     //BUSCAR 
@@ -562,53 +678,26 @@ public class GestorDeArchivos {
         }
 
         Object userObj = nodo.getUserObject();
+
         try {
-            // Si el nodo guarda un File, comparar canonical paths directamente 
             if (userObj instanceof File) {
                 File nodoFile = (File) userObj;
                 if (nodoFile.getCanonicalPath().equals(file.getCanonicalPath())) {
                     return nodo;
                 }
-            } else {
-                // Si el nodo guarda un texto (ej: en algunos puntos todavía usabas nombre),
-                // comparar por nombre simple como fallback
-                String nodoName = nodo.getUserObject().toString();
-                if (nodoName.equalsIgnoreCase(file.getName())) {
-                    // adicional: verificar que la ruta construida coincide (intentar construir)
-                    // construimos ruta desde la raiz usando los nombres del path del nodo
-                    StringBuilder ruta = new StringBuilder();
-                    TreeNode[] path = nodo.getPath();
-                    if (LogIn.CuentaActual != null && path.length > 0 && path[0].toString().equalsIgnoreCase(LogIn.CuentaActual.getName())) {
-                        ruta.append(LogIn.CuentaActual.getAbsolutePath());
-                        for (int i = 1; i < path.length; i++) {
-                            ruta.append(File.separator).append(path[i].toString());
-                        }
-                    } else {
-                        ruta.append(LogIn.CuentaActual.getAbsolutePath());
-                        for (int i = 0; i < path.length; i++) {
-                            ruta.append(File.separator).append(path[i].toString());
-                        }
-                    }
-                    try {
-                        if (new File(ruta.toString()).getCanonicalPath().equals(file.getCanonicalPath())) {
-                            return nodo;
-                        }
-                    } catch (IOException ignored) {
-                    }
-                }
             }
-        } catch (IOException ex) {
-            // si falla canonicalPath dejamos seguir buscando
+        } catch (IOException e) {
+            // ignorar
         }
 
-        Enumeration<?> children = nodo.children();
-        while (children.hasMoreElements()) {
-            DefaultMutableTreeNode child = (DefaultMutableTreeNode) children.nextElement();
+        for (int i = 0; i < nodo.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) nodo.getChildAt(i);
             DefaultMutableTreeNode res = buscarNodoRecursivo(child, file);
             if (res != null) {
                 return res;
             }
         }
+
         return null;
     }
 
@@ -624,156 +713,41 @@ public class GestorDeArchivos {
         }
     }
 
-   
     private void refrescarNodoPorFile(File dir) {
-        if (dir == null) {
+
+        if (dir == null || !dir.exists()) {
             return;
         }
 
         DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
-        Object rootObj = modelo.getRoot();
-        if (!(rootObj instanceof DefaultMutableTreeNode)) {
-            return;
-        }
-        DefaultMutableTreeNode nodoRoot = (DefaultMutableTreeNode) rootObj;
-
-        // 1) buscar nodo existente
         DefaultMutableTreeNode nodo = nodoPorFile(dir);
-        if (nodo != null) {
-            // actualizar contenido del nodo 
-            nodo.removeAllChildren();
-            File[] hijos = dir.listFiles();
-            if (hijos != null) {
-                Arrays.sort(hijos, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
-                for (File h : hijos) {
-                    if (h.isDirectory()) {
-                        nodo.add(crearNodoRecursivo(h));
-                    } else {
-                        nodo.add(new DefaultMutableTreeNode(h));
-                    }
-                }
-            }
-            modelo.nodeStructureChanged(nodo);
-            // expandir y seleccionar carpeta creada o actualizada
-            SwingUtilities.invokeLater(() -> {
-                TreePath path = new TreePath(nodo.getPath());
-                arbol.expandPath(path);
-            });
+
+        if (nodo == null) {
+            organizar();
             return;
         }
 
-        // 2) si no existe, intentar crear la ruta relativa bajo el root visible actual
-        Object userRootObj = nodoRoot.getUserObject();
-        if (userRootObj instanceof File) {
-            File rootFile = (File) userRootObj;
-            try {
-                String rootPath = rootFile.getCanonicalPath();
-                String dirPath = dir.getCanonicalPath();
-                // solo crear si dir está dentro del root actualmente mostrado
-                if (dirPath.startsWith(rootPath)) {
-                    // crear (si falta) los nodos intermedios desde root hasta 'dir'
-                    String rel = dirPath.substring(rootPath.length());
-                    if (rel.startsWith(File.separator)) {
-                        rel = rel.substring(1);
-                    }
-                    if (rel.isEmpty()) {
-                        // dir coincide con rootFile — refrescar root
-                        nodoRoot.removeAllChildren();
-                        File[] hijos = rootFile.listFiles();
-                        if (hijos != null) {
-                            Arrays.sort(hijos, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
-                            for (File h : hijos) {
-                                if (h.isDirectory()) {
-                                    nodoRoot.add(crearNodoRecursivo(h));
-                                } else {
-                                    nodoRoot.add(new DefaultMutableTreeNode(h));
-                                }
-                            }
-                        }
-                        modelo.nodeStructureChanged(nodoRoot);
-                        return;
-                    }
+        nodo.removeAllChildren();
 
-                    // recorrer componentes y crear nodos si faltan
-                    String[] partes = rel.split(Pattern.quote(File.separator));
-                    DefaultMutableTreeNode actualNodo = nodoRoot;
-                    File actualFile = rootFile;
-                    for (String parte : partes) {
-                        if (parte.trim().isEmpty()) {
-                            continue;
-                        }
-                        actualFile = new File(actualFile, parte);
-                        DefaultMutableTreeNode hijoNodo = null;
+        File[] hijos = dir.listFiles();
+        if (hijos != null) {
 
-                        // buscar hijo existente con ese File
-                        Enumeration e = actualNodo.children();
-                        while (e.hasMoreElements()) {
-                            DefaultMutableTreeNode ch = (DefaultMutableTreeNode) e.nextElement();
-                            Object u = ch.getUserObject();
-                            if (u instanceof File) {
-                                try {
-                                    if (((File) u).getCanonicalPath().equals(actualFile.getCanonicalPath())) {
-                                        hijoNodo = ch;
-                                        break;
-                                    }
-                                } catch (IOException ignored) {
-                                }
-                            }
-                        }
+            Arrays.sort(hijos, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
 
-                        if (hijoNodo == null) {
-                            // crear nodo nuevo
-                            if (actualFile.exists()) {
-                                if (actualFile.isDirectory()) {
-                                    hijoNodo = crearNodoRecursivo(actualFile);
-                                } else {
-                                    hijoNodo = new DefaultMutableTreeNode(actualFile);
-                                }
-                                actualNodo.add(hijoNodo);
-                            } else {
-                                // si el File no existe en el FS, termina (no crear nodos inexistentes)
-                                hijoNodo = null;
-                                break;
-                            }
-                        }
-
-                        if (hijoNodo == null) {
-                            break;
-                        }
-                        actualNodo = hijoNodo;
-                    } // fin for partes
-
-                    // si logramos crear/obtener el nodo final, refrescarlo
-                    if (actualNodo != null) {
-                        // si el 'dir' es directorio, actualizar hijos (por si se creó un archivo nuevo dentro)
-                        if (actualFile.isDirectory()) {
-                            actualNodo.removeAllChildren();
-                            File[] hijos = actualFile.listFiles();
-                            if (hijos != null) {
-                                Arrays.sort(hijos, Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
-                                for (File h : hijos) {
-                                    if (h.isDirectory()) {
-                                        actualNodo.add(crearNodoRecursivo(h));
-                                    } else {
-                                        actualNodo.add(new DefaultMutableTreeNode(h));
-                                    }
-                                }
-                            }
-                            modelo.nodeStructureChanged(actualNodo);
-                            final DefaultMutableTreeNode nodoFinal = actualNodo;
-                            SwingUtilities.invokeLater(() -> {
-                                TreePath path = new TreePath(nodoFinal.getPath());
-                                arbol.expandPath(path);
-                                arbol.setSelectionPath(path);
-                            });
-                            return;
-                        }
-                    }
+            for (File h : hijos) {
+                if (h.isDirectory()) {
+                    nodo.add(crearNodoRecursivo(h));
+                } else {
+                    nodo.add(new DefaultMutableTreeNode(h));
                 }
-            } catch (IOException ex) {
-                // ignore y no reiniciar todo
             }
         }
+
+        modelo.nodeStructureChanged(nodo);
+
+        TreePath path = new TreePath(nodo.getPath());
+        arbol.expandPath(path);
+        arbol.setSelectionPath(path);
     }
 
     private String getExtension(String nombre) {
