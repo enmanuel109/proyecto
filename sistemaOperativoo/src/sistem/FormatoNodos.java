@@ -59,12 +59,7 @@ public class FormatoNodos extends DefaultTreeCellRenderer {
             tam = ajustarTexto(tam, COL_TAM);
 
             // Formato alineado tipo tabla
-            String texto = String.format(
-                    "%-" + COL_NOMBRE + "s %-"
-                    + COL_FECHA + "s %-"
-                    + COL_TIPO + "s %-"
-                    + COL_TAM + "s",
-                    nombre, fecha, tipo, tam
+            String texto = String.format("%-" + COL_NOMBRE + "s %-"+ COL_FECHA + "s %-"+ COL_TIPO + "s %-" + COL_TAM + "s",nombre, fecha, tipo, tam
             );
 
             setText(texto);
@@ -90,7 +85,6 @@ public class FormatoNodos extends DefaultTreeCellRenderer {
         if (ancho < 4) {
             ancho = 4;
         }
-        // Si el texto es menor o igual al ancho
         if (txt.length() <= ancho) {
             return String.format("%-" + ancho + "s", txt);
         }

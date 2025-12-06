@@ -354,6 +354,7 @@ public class Escritorio extends JFrame {
         JButton btnPegar = new JButton("Pegar");
         JButton btnEliminar = new JButton("Eliminar");
         JButton btnOrganizar = new JButton("Organizar");
+        JButton btnAbrir = new JButton("Abrir");
         JButton btnOrdenar = new JButton("Ordenar *");
         JTextField txtBuscar = new JTextField(15);
 
@@ -364,7 +365,7 @@ public class Escritorio extends JFrame {
         menuOrdenar.add(new JMenuItem("Tamaño"));
         btnOrdenar.addActionListener(e -> menuOrdenar.show(btnOrdenar, 0, btnOrdenar.getHeight()));
 
-        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnEliminar, btnOrganizar, btnOrdenar};
+        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnEliminar, btnOrganizar,btnAbrir, btnOrdenar};
         Color fondoFijoTop = new Color(180, 180, 180);
 
         GridBagConstraints gbcTop = new GridBagConstraints();
