@@ -41,6 +41,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
@@ -118,59 +120,59 @@ public class Escritorio extends JFrame {
 
         // Barra de tareas
         JPanel barraTareas = new JPanel();
-        barraTareas.setPreferredSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize().width, 50));
+        barraTareas.setPreferredSize(new Dimension(Toolkit.getDefaultToolkit().getScreenSize().width, 70));
         barraTareas.setBackground(new Color(50, 50, 50));
         barraTareas.setLayout(null);
 
         fondoLabel.add(barraTareas, BorderLayout.SOUTH);
 
         ImageIcon iconoBoton = new ImageIcon("src/IMGS/WindowsEscritorio.png");
-        Image imgBoton = iconoBoton.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        Image imgBoton = iconoBoton.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         iconoBoton = new ImageIcon(imgBoton);
         JButton btnMenu = new JButton(iconoBoton);
         btnMenu.setFocusPainted(false);
         btnMenu.setContentAreaFilled(false);
         btnMenu.setBorderPainted(false);
-        btnMenu.setBounds(600, 7, 30, 30);
+        btnMenu.setBounds(600, 6, 50, 50);
         barraTareas.add(btnMenu);
 
         ImageIcon iconoCarpeta = new ImageIcon("src/IMGS/LogoCarpeta.png");
-        Image imgCarpeta = iconoCarpeta.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        Image imgCarpeta = iconoCarpeta.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         iconoCarpeta = new ImageIcon(imgCarpeta);
         JButton btnCarpeta = new JButton(iconoCarpeta);
         btnCarpeta.setFocusPainted(false);
         btnCarpeta.setContentAreaFilled(false);
         btnCarpeta.setBorderPainted(false);
-        btnCarpeta.setBounds(650, 7, 30, 30);
+        btnCarpeta.setBounds(680, 6, 50, 50);
         barraTareas.add(btnCarpeta);
 
         JPanel indCarpeta = new JPanel();
         indCarpeta.setBackground(Color.LIGHT_GRAY);
-        indCarpeta.setBounds(650, 40, 30, 3);
+        indCarpeta.setBounds(680, 60, 50, 4);
         indCarpeta.setVisible(false);
         barraTareas.add(indCarpeta);
 
         JPanel indImg = new JPanel();
         indImg.setBackground(Color.LIGHT_GRAY);
-        indImg.setBounds(700, 40, 30, 3);
+        indImg.setBounds(760, 60, 50, 4);
         indImg.setVisible(false);
         barraTareas.add(indImg);
 
         JPanel indMusica = new JPanel();
         indMusica.setBackground(Color.LIGHT_GRAY);
-        indMusica.setBounds(750, 40, 30, 3);
+        indMusica.setBounds(840, 60, 50, 4);
         indMusica.setVisible(false);
         barraTareas.add(indMusica);
 
         JPanel indDoc = new JPanel();
         indDoc.setBackground(Color.LIGHT_GRAY);
-        indDoc.setBounds(800, 40, 30, 3);
+        indDoc.setBounds(920, 60, 50, 4);
         indDoc.setVisible(false);
         barraTareas.add(indDoc);
 
         JPanel indCmd = new JPanel();
         indCmd.setBackground(Color.LIGHT_GRAY);
-        indCmd.setBounds(850, 40, 30, 3);
+        indCmd.setBounds(1000, 60, 50, 4);
         indCmd.setVisible(false);
         barraTareas.add(indCmd);
 
@@ -185,13 +187,13 @@ public class Escritorio extends JFrame {
         });
 
         ImageIcon iconoImg = new ImageIcon("src/IMGS/Iconoimagenes.png");
-        Image imgImagenes = iconoImg.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        Image imgImagenes = iconoImg.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         iconoImg = new ImageIcon(imgImagenes);
         JButton btnImg = new JButton(iconoImg);
         btnImg.setFocusPainted(false);
         btnImg.setContentAreaFilled(false);
         btnImg.setBorderPainted(false);
-        btnImg.setBounds(700, 7, 30, 30);
+        btnImg.setBounds(760, 6, 50, 50);
         barraTareas.add(btnImg);
         btnImg.addActionListener(e -> {
             GaleriaImagenesGui gal = new GaleriaImagenesGui(indImg);
@@ -206,13 +208,13 @@ public class Escritorio extends JFrame {
         });
 
         ImageIcon iconoMusica = new ImageIcon("src/IMGS/IconoMusica.png");
-        Image imgMusica = iconoMusica.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        Image imgMusica = iconoMusica.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         iconoMusica = new ImageIcon(imgMusica);
         JButton btnMusica = new JButton(iconoMusica);
         btnMusica.setFocusPainted(false);
         btnMusica.setContentAreaFilled(false);
         btnMusica.setBorderPainted(false);
-        btnMusica.setBounds(750, 7, 30, 30);
+        btnMusica.setBounds(840, 6, 50, 50);
         barraTareas.add(btnMusica);
         btnMusica.addActionListener(e -> {
 
@@ -232,14 +234,14 @@ public class Escritorio extends JFrame {
             }
         });
 
-        ImageIcon iconoDocumentos = new ImageIcon("src/IMGS/Iconodoc.png");
-        Image imgDoc = iconoDocumentos.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        ImageIcon iconoDocumentos = new ImageIcon("src/IMGS/IconoEditorTexto.png");
+        Image imgDoc = iconoDocumentos.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         iconoDocumentos = new ImageIcon(imgDoc);
         JButton btnDoc = new JButton(iconoDocumentos);
         btnDoc.setFocusPainted(false);
         btnDoc.setContentAreaFilled(false);
         btnDoc.setBorderPainted(false);
-        btnDoc.setBounds(800, 5, 30, 30);
+        btnDoc.setBounds(920, 6, 50, 50);
         barraTareas.add(btnDoc);
         btnDoc.addActionListener(e -> {
             try {
@@ -257,20 +259,45 @@ public class Escritorio extends JFrame {
             }
         });
 
+        ImageIcon icononexo = new ImageIcon("src/IMGS/IconoNexoo.png");
+        Image imgNexo = icononexo.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+        icononexo = new ImageIcon(imgNexo);
+        JButton btnNexo = new JButton(icononexo);
+        btnNexo.setFocusPainted(false);
+        btnNexo.setContentAreaFilled(false);
+        btnNexo.setBorderPainted(false);
+        btnNexo.setBounds(1080, 6, 50, 50);
+        barraTareas.add(btnNexo);
+        /*btnNexo.addActionListener(e -> {
+            try {
+                EditorLogica logica = new EditorLogica();
+                EditorGUI gui = new EditorGUI(indDoc);
+                EditorController controller = new EditorController(gui, logica);
+                indDoc.setVisible(true);
+
+                escritorio.add(gui);
+                gui.setVisible(true);
+                gui.setSelected(true);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });*/
+
         iconCarpeta = cargarIcono("src/IMGS/LogoCarpeta.png", 20, 20);
-        iconArchivo = cargarIcono("src/IMGS/Iconodoc.png", 20, 20);
-        iconMusica = cargarIcono("src/IMGS/IconoMusica.png", 20, 20);
+        iconArchivo = cargarIcono("src/IMGS/IconoArchivo.png", 20, 20);
+        iconMusica = cargarIcono("src/IMGS/IconoCancion.png", 20, 20);
         iconImagen = cargarIcono("src/IMGS/Iconoimagenes.png", 20, 20);
-        iconTexto = cargarIcono("src/IMGS/Iconodoc.png", 20, 20);
+        iconTexto = cargarIcono("src/IMGS/IconoArchivo.png", 20, 20);
 
         ImageIcon iconoCmd = new ImageIcon("src/IMGS/LogoCmd.png");
-        Image imgCmd = iconoCmd.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        Image imgCmd = iconoCmd.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         iconoCmd = new ImageIcon(imgCmd);
         JButton btnCmd = new JButton(iconoCmd);
         btnCmd.setFocusPainted(false);
         btnCmd.setContentAreaFilled(false);
         btnCmd.setBorderPainted(false);
-        btnCmd.setBounds(850, 5, 30, 30);
+        btnCmd.setBounds(1000, 6, 50, 50);
         barraTareas.add(btnCmd);
 
         btnCmd.addActionListener(e -> {
@@ -322,13 +349,13 @@ public class Escritorio extends JFrame {
         JPanel panelReloj = new JPanel(new GridLayout(2, 1));
         panelReloj.setOpaque(true);
         panelReloj.setBackground(new Color(80, 80, 80));
-        panelReloj.setBounds(Toolkit.getDefaultToolkit().getScreenSize().width - 150, 0, 150, 50);
+        panelReloj.setBounds(Toolkit.getDefaultToolkit().getScreenSize().width - 150, 0, 150, 70);
         JLabel lblHora = new JLabel("", SwingConstants.CENTER);
         lblHora.setForeground(Color.WHITE);
-        lblHora.setFont(new Font("Arial", Font.BOLD, 16));
+        lblHora.setFont(new Font("Arial", Font.BOLD, 18));
         JLabel lblFecha = new JLabel("", SwingConstants.CENTER);
         lblFecha.setForeground(Color.WHITE);
-        lblFecha.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblFecha.setFont(new Font("Arial", Font.PLAIN, 16));
         panelReloj.add(lblHora);
         panelReloj.add(lblFecha);
         barraTareas.add(panelReloj);
@@ -372,10 +399,10 @@ public class Escritorio extends JFrame {
         JPanel contenido = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
-        Color c1 = new Color(200, 200, 200);
-        Color c2 = new Color(150, 150, 150);
-        Color c3 = new Color(120, 120, 120);
-        Color c4 = new Color(90, 90, 90);
+        Color c1 = new Color(35, 35, 35);   // contenedor izquierdo superior
+        Color c2 = new Color(45, 45, 45);   // barra de botones superiores
+        Color c3 = new Color(40, 40, 40);   // panel botones laterales
+        Color c4 = new Color(30, 30, 30);   // contenedor del JTree
 
         // Fila 1 Columna 1
         JPanel fila1col1 = new JPanel();
@@ -401,7 +428,13 @@ public class Escritorio extends JFrame {
         JButton btnOrganizar = new JButton("Organizar");
         JButton btnAbrir = new JButton("Abrir");
         JButton btnOrdenar = new JButton("Ordenar *");
-        JTextField txtBuscar = new JTextField(15);
+
+        JTextField txtBuscar = new JTextField("🔎 Busca Aquí", 15);
+        txtBuscar.setForeground(Color.LIGHT_GRAY);
+        txtBuscar.setBackground(new Color(25, 25, 25));
+        txtBuscar.setCaretColor(Color.WHITE);
+        txtBuscar.setBorder(BorderFactory.createLineBorder(new Color(180, 40, 60)));
+        txtBuscar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
         JPopupMenu menuOrdenar = new JPopupMenu();
         menuOrdenar.add(new JMenuItem("Nombre"));
@@ -459,6 +492,14 @@ public class Escritorio extends JFrame {
         Files.setCellRenderer(new FormatoNodos());
         cargarArbolCompleto();
 
+        Files = new JTree();
+        Files.setCellRenderer(new FormatoNodos());
+
+        Files.setBackground(new Color(25, 25, 25)); // fondo oscuro
+        Files.setForeground(Color.WHITE);           // texto blanco
+        Files.setRowHeight(26);
+
+        cargarArbolCompleto();
         // Crear gestor para manejar todos los botones
         gestor = new GestorDeArchivos(Files, this);
 
@@ -565,18 +606,39 @@ public class Escritorio extends JFrame {
 
             }).start();
         });
+        txtBuscar.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (txtBuscar.getText().equals("🔎 Busca Aquí")) {
+                    txtBuscar.setText("");
+                    txtBuscar.setForeground(Color.WHITE);
+                }
+            }
 
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (txtBuscar.getText().isEmpty()) {
+                    txtBuscar.setText("🔎 Busca Aquí");
+                    txtBuscar.setForeground(Color.LIGHT_GRAY);
+                }
+            }
+        });
 // Buscar por texto (txtBuscar)
         txtBuscar.addActionListener(ev -> {
             String q = txtBuscar.getText();
+
+            if (q.equals("🔎 Busca Aquí") || q.trim().isEmpty()) {
+                return;
+            }
+
             gestor.buscar(q);
         });
-
         gbcTop.gridx = botonesTop.length;
         gbcTop.weightx = 1;
         gbcTop.anchor = GridBagConstraints.EAST;
         txtBuscar.setPreferredSize(new Dimension(20, 10));
         txtBuscar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
+
         fila1col2.add(txtBuscar, gbcTop);
 
         gbc.gridx = 1;
@@ -1005,75 +1067,102 @@ public class Escritorio extends JFrame {
 
         JInternalFrame frame = new JInternalFrame(
                 modo.equals("CREAR") ? "CREAR CUENTA" : "ELIMINAR CUENTA",
-                false,
-                true,
-                false,
-                false
+                false, true, false, false
         );
 
-        frame.setSize(600, 450);
-        frame.setLocation(200, 150);
-        frame.setLayout(null);
-        frame.getContentPane().setBackground(Color.BLACK);
+        frame.setSize(500, 380);
+        frame.setLocation(300, 200);
+        frame.setLayout(new BorderLayout());
+        frame.getContentPane().setBackground(new Color(25, 25, 25)); // negro más claro
 
         escritorio.add(frame);
 
+        // ================== TÍTULO ==================
         JLabel lblTitulo = new JLabel(frame.getTitle(), SwingConstants.CENTER);
-        lblTitulo.setBounds(0, 10, 400, 30);
         lblTitulo.setForeground(Color.WHITE);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
-        frame.add(lblTitulo);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblTitulo.setBorder(BorderFactory.createEmptyBorder(20, 10, 10, 10));
+        frame.add(lblTitulo, BorderLayout.NORTH);
+
+        // ================== FORMULARIO ==================
+        JPanel panelForm = new JPanel(new GridBagLayout());
+        panelForm.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         JLabel lblUser = new JLabel("Usuario:");
-        lblUser.setBounds(50, 60, 100, 25);
         lblUser.setForeground(Color.WHITE);
-        frame.add(lblUser);
+        lblUser.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 
         JTextField txtUsuario = new JTextField();
-        txtUsuario.setBounds(150, 60, 180, 25);
-        frame.add(txtUsuario);
+        txtUsuario.setPreferredSize(new Dimension(220, 30));
 
         JLabel lblPass = new JLabel("Contraseña:");
-        lblPass.setBounds(50, 100, 100, 25);
         lblPass.setForeground(Color.WHITE);
-        frame.add(lblPass);
+        lblPass.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 
         JPasswordField txtContrasena = new JPasswordField();
-        txtContrasena.setBounds(150, 100, 140, 25);
-        frame.add(txtContrasena);
+        txtContrasena.setPreferredSize(new Dimension(220, 30));
 
-        ImageIcon ojoIcon3 = new ImageIcon("src/IMGS/OJO.png");
-        Image imgOjo3 = ojoIcon3.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
-        ojoIcon3 = new ImageIcon(imgOjo3);
+        // ===== OJO =====
+        ImageIcon ojoIcon = new ImageIcon(
+                new ImageIcon("src/IMGS/OJO.png").getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH)
+        );
 
-        JButton btnOjo3 = new JButton(ojoIcon3);
-        btnOjo3.setBounds(300, 100, 30, 25);
-        btnOjo3.setFocusPainted(false);
-        btnOjo3.setContentAreaFilled(false);
-        btnOjo3.setBorderPainted(false);
+        JButton btnOjo = new JButton(ojoIcon);
+        btnOjo.setFocusPainted(false);
+        btnOjo.setContentAreaFilled(false);
+        btnOjo.setBorderPainted(false);
 
-        btnOjo3.addMouseListener(new MouseAdapter() {
-            @Override
+        btnOjo.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
                 txtContrasena.setEchoChar((char) 0);
             }
 
-            @Override
             public void mouseReleased(MouseEvent e) {
                 txtContrasena.setEchoChar('*');
             }
         });
 
-        frame.add(btnOjo3);
+        // ===== POSICIONES EN GRID =====
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panelForm.add(lblUser, gbc);
 
+        gbc.gridx = 1;
+        panelForm.add(txtUsuario, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        panelForm.add(lblPass, gbc);
+
+        gbc.gridx = 1;
+        panelForm.add(txtContrasena, gbc);
+
+        gbc.gridx = 2;
+        panelForm.add(btnOjo, gbc);
+
+        frame.add(panelForm, BorderLayout.CENTER);
+
+        // ================== BOTÓN ==================
         JButton btnAccion = new JButton(modo.equals("CREAR") ? "Crear" : "Eliminar");
-        btnAccion.setBounds(120, 160, 140, 35);
-        frame.add(btnAccion);
+        btnAccion.setPreferredSize(new Dimension(160, 40));
+        btnAccion.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnAccion.setBackground(new Color(180, 40, 60));
+        btnAccion.setForeground(Color.WHITE);
+        btnAccion.setFocusPainted(false);
 
+        JPanel panelBoton = new JPanel();
+        panelBoton.setOpaque(false);
+        panelBoton.add(btnAccion);
+
+        frame.add(panelBoton, BorderLayout.SOUTH);
+
+        // ================== LÓGICA ==================
         ArchivosUsuarios archivo = new ArchivosUsuarios();
 
         btnAccion.addActionListener(e -> {
-
             try {
                 String nombre = txtUsuario.getText().trim().toUpperCase();
                 String contrasena = new String(txtContrasena.getPassword()).trim();
@@ -1083,7 +1172,6 @@ public class Escritorio extends JFrame {
                     return;
                 }
 
-                // CREAR
                 if (modo.equals("CREAR")) {
 
                     if (archivo.usuarioExistente(nombre)) {
@@ -1094,8 +1182,7 @@ public class Escritorio extends JFrame {
                     archivo.agregarUsuario(nombre, contrasena);
                     JOptionPane.showMessageDialog(frame, "Usuario creado correctamente");
                     frame.dispose();
-                } // ELIMINAR
-                else {
+                } else {
 
                     if (!archivo.validarUsuario(nombre, contrasena)) {
                         JOptionPane.showMessageDialog(frame, "Datos incorrectos");
@@ -1119,10 +1206,8 @@ public class Escritorio extends JFrame {
                 }
 
             } catch (Exception ex) {
-                ex.printStackTrace();
                 JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
             }
-
         });
 
         frame.setVisible(true);

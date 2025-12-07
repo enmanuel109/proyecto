@@ -64,45 +64,77 @@ public class GestorDeArchivos {
     }
 
     private boolean esZonaProtegida(File f) {
-        if (f == null) {
-            return true;
-        }
 
         try {
-            File raiz = new File("Unidad_Z").getCanonicalFile();
-            File usuario = LogIn.CuentaActual.getCanonicalFile();
-            File objetivo = f.getCanonicalFile();
+            File unidadZ = new File("Unidad_Z").getCanonicalFile();
+            File archivoReal = f.getCanonicalFile();
 
-            // ADMIN puede con todo
+            //  NADIE puede borrar Unidad_Z
+            if (archivoReal.equals(unidadZ)) {
+                return true;
+            }
+
+            //  SI ES ADMIN
             if (esAdmin()) {
-                return false;
+
+                //  No puede borrar carpetas de usuarios
+                if (archivoReal.getParentFile() != null
+                        && archivoReal.getParentFile().getCanonicalFile().equals(unidadZ)) {
+                    return true;
+                }
+
+                //  No puede borrar carpetas principales de los usuarios
+                if (esCarpetaPrincipalUsuario(archivoReal)) {
+                    return true;
+                }
+
+                return false; //  Lo demás sí puede
             }
 
-            //  NADIE puede tocar Unidad_Z
-            if (objetivo.equals(raiz)) {
+            //  SI ES USUARIO NORMAL
+            File usuario = LogIn.CuentaActual.getCanonicalFile();
+
+            //  No puede borrar su propia carpeta raíz
+            if (archivoReal.equals(usuario)) {
                 return true;
             }
 
-            //  NO se puede tocar la carpeta raíz del usuario
-            if (objetivo.equals(usuario)) {
+            //  No puede borrar Documentos / Musica / Imagenes
+            if (esCarpetaPrincipalUsuario(archivoReal)) {
                 return true;
             }
 
-            // NO tocar carpetas principales
-            File doc = new File(usuario, "Documentos").getCanonicalFile();
-            File mus = new File(usuario, "Musica").getCanonicalFile();
-            File img = new File(usuario, "Imagenes").getCanonicalFile();
-
-            if (objetivo.equals(doc) || objetivo.equals(mus) || objetivo.equals(img)) {
-                return true;
-            }
-
-            //  TODO LO DEMÁS SÍ SE PUEDE
             return false;
 
-        } catch (IOException e) {
-            return true;
+        } catch (Exception e) {
+            return true; //  por seguridad, bloquear
         }
+    }
+
+    private boolean esCarpetaPrincipalUsuario(File f) throws IOException {
+
+        if (!f.isDirectory()) {
+            return false;
+        }
+
+        String nombre = f.getName().toLowerCase();
+
+        if (!nombre.equals("documentos")
+                && !nombre.equals("musica")
+                && !nombre.equals("imagenes")) {
+            return false;
+        }
+
+        File padre = f.getParentFile();
+        if (padre == null) {
+            return false;
+        }
+
+        File unidadZ = new File("Unidad_Z").getCanonicalFile();
+
+        // Debe estar exactamente en una carpeta de usuario
+        return padre.getParentFile() != null
+                && padre.getParentFile().getCanonicalFile().equals(unidadZ);
     }
 
     //RENOMBRAR
@@ -818,44 +850,58 @@ public class GestorDeArchivos {
 
         if (termino.isEmpty()) {
             organizar();
-            ultimaCarpetaBusqueda = null; //  limpiar contexto
+            ultimaCarpetaBusqueda = null;
             return;
         }
 
         String nombreBase = "Resultados";
 
         TreePath sel = arbol.getSelectionPath();
-        if (sel != null) {
-            File base = fileDesdePath(sel);
-            if (base != null) {
-                nombreBase = "Resultados - " + base.getName();
-            }
-        } else if (ultimaCarpetaBusqueda != null) {
-            nombreBase = "Resultados - " + ultimaCarpetaBusqueda.getName();
-        }
+        File baseBusqueda = null;
 
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(nombreBase);
-        //  PRIORIDAD MÁXIMA: JTree
+        //  PRIORIDAD: LO SELECCIONADO EN EL JTREE
         if (sel != null) {
-            File base = fileDesdePath(sel);
 
-            if (base != null && base.exists()) {
-                ultimaCarpetaBusqueda = base; // GUARDAMOS CONTEXTO
-                buscarEnCarpeta(raiz, base, termino);
+            File seleccionado = fileDesdePath(sel);
+
+            if (seleccionado != null && seleccionado.exists()) {
+
+                if (seleccionado.isDirectory()) {
+                    baseBusqueda = seleccionado;  //  buscar desde esa carpeta
+                    nombreBase = "Resultados - " + seleccionado.getName();
+                } else {
+                    // SI ES ARCHIVO → BUSCAR EN SU CARPETA PADRE
+                    baseBusqueda = seleccionado.getParentFile();
+                    if (baseBusqueda != null) {
+                        nombreBase = "Resultados - " + baseBusqueda.getName();
+                    }
+                }
+
+                ultimaCarpetaBusqueda = baseBusqueda;
+                DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(nombreBase);
+
+                buscarEnCarpeta(raiz, baseBusqueda, termino);
                 actualizarArbolBusqueda(raiz);
                 return;
             }
         }
 
-        //   SI YA SE HABÍA BUSCADO ANTES → USAR LA MISMA CARPETA
+        //SI NO HAY SELECCIÓN → USAR LA ÚLTIMA CARPETA USADA
         if (ultimaCarpetaBusqueda != null && ultimaCarpetaBusqueda.exists()) {
+
+            nombreBase = "Resultados - " + ultimaCarpetaBusqueda.getName();
+            DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(nombreBase);
+
             buscarEnCarpeta(raiz, ultimaCarpetaBusqueda, termino);
             actualizarArbolBusqueda(raiz);
             return;
         }
 
-        // ÚLTIMA OPCIÓN: TODO
+        //  ÚLTIMA OPCION → BUSCAR EN TODO
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode("Resultados");
+
         if (esAdmin()) {
+
             File unidadZ = new File("Unidad_Z");
             File[] usuarios = unidadZ.listFiles();
 
@@ -868,6 +914,7 @@ public class GestorDeArchivos {
             }
 
         } else {
+
             File usuario = LogIn.CuentaActual;
             if (usuario != null && usuario.exists()) {
                 buscarEnCarpeta(raiz, usuario, termino);

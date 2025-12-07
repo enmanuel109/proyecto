@@ -39,22 +39,46 @@ public class EditorController {
 
     //  SOLO PERMITIR ENTRAR AL USUARIO ACTUAL
     private void inicializarChooser() {
-        File usuario = LogIn.CuentaActual;
 
-        chooser = new JFileChooser(usuario);
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.setFileFilter(new FileNameExtensionFilter("Archivos de texto (.txt)", "txt"));
+        if (esAdmin()) {
+            File unidadZ = new File("Unidad_Z");
 
-        chooser.setFileView(new javax.swing.filechooser.FileView() {
-            @Override
-            public Boolean isTraversable(File f) {
-                try {
-                    return f.getCanonicalPath().startsWith(usuario.getCanonicalPath());
-                } catch (Exception e) {
-                    return false;
+            chooser = new JFileChooser(unidadZ);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(new FileNameExtensionFilter("Archivos de texto (.txt)", "txt"));
+
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(unidadZ.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
-            }
-        });
+            });
+
+        } else {
+            // ✅ USUARIO NORMAL → SOLO SU CARPETA
+            File usuario = LogIn.CuentaActual;
+
+            chooser = new JFileChooser(usuario);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(new FileNameExtensionFilter("Archivos de texto (.txt)", "txt"));
+
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(usuario.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            });
+        }
     }
 
     private void registrarCambioDocumento() {
@@ -142,76 +166,79 @@ public class EditorController {
         }
     }
 
-  private void accionGuardar() {
-    try {
-        File usuario = LogIn.CuentaActual;
+    private void accionGuardar() {
+        try {
 
-        JFileChooser chooser = new JFileChooser(usuario);
+            File carpetaBase = esAdmin()
+                    ? new File("Unidad_Z")
+                    : LogIn.CuentaActual;
 
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.setFileFilter(
-                new FileNameExtensionFilter("Archivos de texto (*.txt)", "txt")
-        );
+            JFileChooser chooser = new JFileChooser(carpetaBase);
 
-        // BLOQUEAR SALIDA DEL USUARIO
-        chooser.setFileView(new javax.swing.filechooser.FileView() {
-            @Override
-            public Boolean isTraversable(File f) {
-                try {
-                    return f.getCanonicalPath()
-                                .startsWith(usuario.getCanonicalPath());
-                } catch (Exception e) {
-                    return false;
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter("Archivos de texto (*.txt)", "txt")
+            );
+
+            // ✅ BLOQUEO DE SALIDA SEGÚN ROL
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(carpetaBase.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            });
+
+            if (archivoActual != null) {
+                chooser.setSelectedFile(archivoActual);
+            }
+
+            int r = chooser.showSaveDialog(gui);
+            if (r != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+
+            File archivo = chooser.getSelectedFile();
+
+            if (!archivo.getName().toLowerCase().endsWith(".txt")) {
+                archivo = new File(
+                        archivo.getParent(),
+                        archivo.getName() + ".txt"
+                );
+            }
+
+            // ✅ CONFIRMAR SI EXISTE
+            if (archivo.exists()) {
+                int resp = JOptionPane.showConfirmDialog(
+                        gui,
+                        "El archivo ya existe.\n¿Desea sobrescribirlo?",
+                        "Confirmación",
+                        JOptionPane.YES_NO_OPTION
+                );
+
+                if (resp != JOptionPane.YES_OPTION) {
+                    return;
                 }
             }
-        });
 
-        //  SI YA EXISTÍA UN ARCHIVO → LO SELECCIONA POR DEFECTO
-        if (archivoActual != null) {
-            chooser.setSelectedFile(archivoActual);
+            // ✅ GUARDAR TEXTO + FORMATO
+            logica.guardarTxt(archivo, gui.getAreaTexto().getText());
+            logica.guardarFmt(archivo, gui.getAreaTexto().getStyledDocument());
+
+            archivoActual = archivo;
+            modificado = false;
+
+            gui.setTitle("Editor de texto - " + archivo.getName());
+            JOptionPane.showMessageDialog(gui, "Archivo guardado correctamente.");
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(gui, "Error al guardar archivo.");
         }
-
-        int r = chooser.showSaveDialog(gui);
-        if (r != JFileChooser.APPROVE_OPTION) return;
-
-        File archivo = chooser.getSelectedFile();
-        // FORZAR EXTENSIÓN .txt
-        if (!archivo.getName().toLowerCase().endsWith(".txt")) {
-            archivo = new File(
-                    archivo.getParent(),
-                    archivo.getName() + ".txt"
-            );
-        }
-
-        //  SI YA EXISTE → PREGUNTAR
-        if (archivo.exists()) {
-            int resp = JOptionPane.showConfirmDialog(
-                    gui,
-                    "El archivo ya existe.\n¿Desea sobrescribirlo?",
-                    "Confirmación",
-                    JOptionPane.YES_NO_OPTION
-            );
-
-            if (resp != JOptionPane.YES_OPTION) return;
-        }
-
-        //  GUARDAR TEXTO
-        logica.guardarTxt(archivo, gui.getAreaTexto().getText());
-
-        //  GUARDAR FORMATO
-        logica.guardarFmt(archivo, gui.getAreaTexto().getStyledDocument());
-
-        archivoActual = archivo;
-        modificado = false;
-
-        gui.setTitle("Editor de texto - " + archivo.getName());
-
-        JOptionPane.showMessageDialog(gui, "Archivo guardado correctamente.");
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(gui, "Error al guardar archivo.");
     }
-}
 
     private void cambiarFuente() {
         String fuente = (String) gui.getCbFuente().getSelectedItem();
@@ -244,5 +271,10 @@ public class EditorController {
         Style s = gui.getAreaTexto().addStyle("color", null);
         StyleConstants.setForeground(s, c);
         gui.getAreaTexto().setCharacterAttributes(s, false);
+    }
+
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
     }
 }

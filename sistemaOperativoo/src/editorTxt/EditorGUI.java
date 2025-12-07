@@ -30,11 +30,11 @@ public class EditorGUI extends JInternalFrame {
     private JComboBox<Integer> cbTam;
     private JButton btnColor;
 
-    private static final Color FONDO_OSCURO = new Color(30, 30, 30);
+    private static final Color FONDO_OSCURO = new Color(18, 18, 18);
     private static final Color PANEL_OSCURO = new Color(37, 37, 38);
     private static final Color TEXTO_CLARO = new Color(224, 224, 224);
-    private static final Color AZUL = new Color(0, 191, 230);
-    private static final Color AZUL_HOVER = new Color(170, 255, 255);
+    private static final Color AZUL = new Color(180, 40, 60);
+    private static final Color AZUL_HOVER = new Color(210, 70, 90);
 
     public EditorGUI(JPanel indicadorSub) {
         super("Editor de texto", true, true, true, true);
@@ -88,16 +88,37 @@ public class EditorGUI extends JInternalFrame {
         JPanel barra = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 8));
         barra.setBackground(PANEL_OSCURO);
 
-        itemNuevo = crearBotonAzul("", cargarIcono("add.png"), "Empieza a trabajar en un archivo nuevo.");
-        itemAbrir = crearBotonAzul("Abrir", cargarIcono("open.png"), "Abre un nuevo archivo.");
-        itemGuardarTxt = crearBotonAzul("Guardar", cargarIcono("save.png"), "Guarda tu archivo.");
+        itemNuevo = new JButton("", cargarIcono("add.png"));
+        itemAbrir = new JButton("Abrir", cargarIcono("open.png"));
+        itemGuardarTxt = new JButton("Guardar", cargarIcono("save.png"));
+
+        aplicarEstiloBtnImportar(itemNuevo);
+        aplicarEstiloBtnImportar(itemAbrir);
+        aplicarEstiloBtnImportar(itemGuardarTxt);
+
         itemNuevo.setPreferredSize(new Dimension(40, 40));
+        itemAbrir.setPreferredSize(new Dimension(120, 40));
+        itemGuardarTxt.setPreferredSize(new Dimension(120, 40));
 
         barra.add(itemNuevo);
         barra.add(itemAbrir);
         barra.add(itemGuardarTxt);
 
         return barra;
+    }
+
+    private void aplicarEstiloBtnImportar(JButton btn) {
+        btn.setFocusPainted(false);
+        btn.setBackground(new Color(35, 20, 25));
+        btn.setForeground(TEXTO_CLARO);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+
+        btn.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(210, 70, 90), 1),
+                        BorderFactory.createEmptyBorder(8, 16, 8, 16)
+                )
+        );
     }
 
     private JComponent crearBarraFormato() {
@@ -117,7 +138,8 @@ public class EditorGUI extends JInternalFrame {
         cbTam = new JComboBox<>(tamanos);
         estilizarCombo(cbTam);
 
-        btnColor = crearBotonAzul("Color", null, "Selecciona un color para el texto.");
+        btnColor = new JButton("Color");
+        aplicarEstiloBtnImportar(btnColor);
         btnColor.setPreferredSize(new Dimension(80, 40));
 
         JLabel lblFuente = new JLabel("Fuente:");

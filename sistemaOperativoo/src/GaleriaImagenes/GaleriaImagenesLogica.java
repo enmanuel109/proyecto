@@ -16,35 +16,45 @@ import sistem.LogIn;
 
 public class GaleriaImagenesLogica {
 
-    private final File carpetaImagenes;
+    private final File carpetaImagenesBase;
 
     public GaleriaImagenesLogica() {
-        File usuario = LogIn.CuentaActual;
-        carpetaImagenes = new File(usuario, "Imagenes");
-        if (!carpetaImagenes.exists()) {
-            carpetaImagenes.mkdirs();
+
+        // ✅ SI ES ADMIN → TODA LA UNIDAD_Z
+        if (esAdmin()) {
+            carpetaImagenesBase = new File("Unidad_Z");
+        } // ✅ SI ES USUARIO NORMAL → SOLO SU CARPETA IMAGENES
+        else {
+            File usuario = LogIn.CuentaActual;
+            carpetaImagenesBase = new File(usuario, "Imagenes");
+
+            if (!carpetaImagenesBase.exists()) {
+                carpetaImagenesBase.mkdirs();
+            }
         }
     }
 
+    // ✅ OBTENER IMÁGENES SEGÚN EL ROL
     public List<File> obtenerImagenes() {
         List<File> lista = new ArrayList<>();
-        File[] archivos = carpetaImagenes.listFiles();
 
-        if (archivos == null){ 
-            return lista;
-        }
+        buscarImagenesRecursivo(carpetaImagenesBase, lista);
 
-        for (File f : archivos) {
-            if (esImagen(f)) {
-                lista.add(f);
-            }
-        }
-        lista.sort(Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+        lista.sort(Comparator.comparing(
+                File::getName, String.CASE_INSENSITIVE_ORDER));
+
         return lista;
     }
 
+    // ✅ COPIA SOLO PARA USUARIO NORMAL
     public void importarImagen(File origen) throws IOException {
-        File destino = new File(carpetaImagenes, origen.getName());
+
+        // ❌ ADMIN NO IMPORTA A CARPETA ÚNICA
+        if (esAdmin()) {
+            throw new IOException("El administrador no puede importar imágenes aquí.");
+        }
+
+        File destino = new File(carpetaImagenesBase, origen.getName());
         int c = 1;
 
         while (destino.exists()) {
@@ -52,11 +62,33 @@ public class GaleriaImagenesLogica {
             int p = n.lastIndexOf('.');
             String base = (p == -1) ? n : n.substring(0, p);
             String ext = (p == -1) ? "" : n.substring(p);
-            destino = new File(carpetaImagenes, base + "_" + c + ext);
+            destino = new File(carpetaImagenesBase, base + "_" + c + ext);
             c++;
         }
 
         Files.copy(origen.toPath(), destino.toPath());
+    }
+
+    // ✅ BUSCAR IMÁGENES EN TODA LA ESTRUCTURA
+    private void buscarImagenesRecursivo(File carpeta, List<File> lista) {
+
+        if (carpeta == null || !carpeta.exists()) {
+            return;
+        }
+
+        File[] archivos = carpeta.listFiles();
+        if (archivos == null) {
+            return;
+        }
+
+        for (File f : archivos) {
+
+            if (f.isDirectory()) {
+                buscarImagenesRecursivo(f, lista);
+            } else if (esImagen(f)) {
+                lista.add(f);
+            }
+        }
     }
 
     private boolean esImagen(File f) {
@@ -64,5 +96,9 @@ public class GaleriaImagenesLogica {
         return n.endsWith(".jpg") || n.endsWith(".jpeg")
                 || n.endsWith(".png") || n.endsWith(".gif");
     }
-    
+
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
+    }
 }
