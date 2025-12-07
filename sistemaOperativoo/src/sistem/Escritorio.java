@@ -493,6 +493,8 @@ public class Escritorio extends JFrame {
         btnCambiarNombre.addActionListener(e -> {
             try {
                 gestor.renombrarSeleccionado(this);
+                cargarBotonesLaterales(panelBotones);
+
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error renombrando: " + ex.getMessage());
@@ -501,6 +503,8 @@ public class Escritorio extends JFrame {
 
         btnEliminar.addActionListener(e -> {
             gestor.eliminarSeleccionado(this);
+            cargarBotonesLaterales(panelBotones);
+
         });
 
         btnCopiar.addActionListener(e -> gestor.copiarSeleccionado(this));
@@ -508,6 +512,8 @@ public class Escritorio extends JFrame {
         btnPegar.addActionListener(e -> {
             try {
                 gestor.pegarSeleccionado(this);
+                cargarBotonesLaterales(panelBotones);
+
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error pegando: " + ex.getMessage());
@@ -599,6 +605,7 @@ public class Escritorio extends JFrame {
         JScrollPane scrollBotones = new JScrollPane(panelBotones);
         scrollBotones.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollBotones.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollBotones.getVerticalScrollBar().setUnitIncrement(16); // ✅ velocidad de scroll
         scrollBotones.setBorder(null);
 
         // agregar al layout general scroll
@@ -710,8 +717,7 @@ public class Escritorio extends JFrame {
             }
 
             raizCarga = unidad;
-        } 
-        else {
+        } else {
             File usuario = LogIn.CuentaActual;
 
             if (usuario == null) {
@@ -728,7 +734,7 @@ public class Escritorio extends JFrame {
                 return;
             }
 
-            raizCarga = carpeta; 
+            raizCarga = carpeta;
         }
 
         //  CARGAR TODO CON ARCHIVOS Y CARPETAS
@@ -769,7 +775,10 @@ public class Escritorio extends JFrame {
         // BOTÓN INICIO (SIEMPRE PRIMERO)
         JButton btnInicio = new JButton("  Inicio", iconInicio);
         estilizarBoton(btnInicio);
-        btnInicio.addActionListener(e -> cargarArbolCompleto());
+        btnInicio.addActionListener(e -> {
+            setCarpetaActual(null);   // limpiar carpeta actual
+            cargarArbolCompleto();
+        });
         panelBotones.add(btnInicio);
         panelBotones.add(Box.createVerticalStrut(15));
 
@@ -787,6 +796,12 @@ public class Escritorio extends JFrame {
                         estilizarBoton(btnUser);
 
                         btnUser.addActionListener(ev -> {
+                            File base = new File("Unidad_Z", u.getName());
+
+                            gestor.setUltimaCarpetaBusqueda(base);  // ✅ AHORA EL BUSCADOR SABE DÓNDE ESTÁ
+                            setCarpetaActual(null);
+                            Files.clearSelection();
+
                             cargarUsuarioAdmin(u.getName());
                         });
 
@@ -810,9 +825,25 @@ public class Escritorio extends JFrame {
         estilizarBoton(btnImg);
         estilizarBoton(btnMus);
 
-        btnDoc.addActionListener(e -> cargarSoloCarpeta("Documentos"));
-        btnImg.addActionListener(e -> cargarSoloCarpeta("Imagenes"));
-        btnMus.addActionListener(e -> cargarSoloCarpeta("Musica"));
+        btnDoc.addActionListener(e -> {
+            File base = new File(LogIn.CuentaActual, "Documentos");
+            gestor.setUltimaCarpetaBusqueda(base);
+            Files.clearSelection();
+            cargarSoloCarpeta("Documentos");
+        });
+        btnImg.addActionListener(e -> {
+            File base = new File(LogIn.CuentaActual, "Imagenes");
+            gestor.setUltimaCarpetaBusqueda(base);
+            Files.clearSelection();
+            cargarSoloCarpeta("Imagenes");
+        });
+
+        btnMus.addActionListener(e -> {
+            File base = new File(LogIn.CuentaActual, "Musica");
+            gestor.setUltimaCarpetaBusqueda(base);
+            Files.clearSelection();
+            cargarSoloCarpeta("Musica");
+        });
 
         panelBotones.add(btnDoc);
         panelBotones.add(Box.createVerticalStrut(10));
@@ -842,7 +873,20 @@ public class Escritorio extends JFrame {
                 estilizarBoton(btnExtra);
 
                 btnExtra.addActionListener(e -> {
-                    cargarDesdeArchivoDirecto(f);
+
+                    if (f.isDirectory()) {
+                        gestor.setUltimaCarpetaBusqueda(f);   //  CONTEXTO REAL
+                        setCarpetaActual(f.getName());
+                        cargarDesdeArchivoDirecto(f);
+
+                    } else {
+                        gestor.setUltimaCarpetaBusqueda(f.getParentFile());  //  BUSCA EN LA CARPETA DEL ARCHIVO
+                        setCarpetaActual(f.getParentFile().getName());
+                        cargarDesdeArchivoDirecto(f);
+                    }
+
+                    Files.clearSelection();
+
                 });
 
                 panelBotones.add(btnExtra);
@@ -925,6 +969,7 @@ public class Escritorio extends JFrame {
     }
 
     private void estilizarBoton(JButton b) {
+
         Color fondoFijo = new Color(200, 200, 200);
 
         b.setFocusPainted(false);
@@ -933,9 +978,15 @@ public class Escritorio extends JFrame {
         b.setOpaque(true);
         b.setBackground(fondoFijo);
         b.setHorizontalAlignment(SwingConstants.LEFT);
-        b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
         b.setIconTextGap(10);
+
+        // TAMAÑO FIJO REAL (ESTO EVITA QUE SE APLASTEN)
+        Dimension size = new Dimension(240, 38);
+        b.setPreferredSize(size);
+        b.setMinimumSize(size);
+        b.setMaximumSize(size);
+
+        b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
 
         b.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -1043,8 +1094,7 @@ public class Escritorio extends JFrame {
                     archivo.agregarUsuario(nombre, contrasena);
                     JOptionPane.showMessageDialog(frame, "Usuario creado correctamente");
                     frame.dispose();
-                } 
-                // ELIMINAR
+                } // ELIMINAR
                 else {
 
                     if (!archivo.validarUsuario(nombre, contrasena)) {

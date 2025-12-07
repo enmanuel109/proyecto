@@ -21,28 +21,25 @@ import java.util.ArrayList;
  */
 public class ArchivosUsuarios {
 
-    private final File archivoUsuarios = new File("Unidad_Z/usuario.usr");
+    private final File archivoUsuarios = new File("usuario.usr");
 
     public ArchivosUsuarios() {
         try {
-            File carpeta = new File("Unidad_Z");
-            carpeta.mkdir();
-
             if (!archivoUsuarios.exists()) {
                 archivoUsuarios.createNewFile();
             }
-
             crearAdminSiNoExiste();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-  
     public void agregarUsuario(String nombre, String contraseña) throws IOException {
         nombre = nombre.toUpperCase();
 
-        if (usuarioExistente(nombre)) return;
+        if (usuarioExistente(nombre)) {
+            return;
+        }
 
         try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "rw")) {
             rusers.seek(rusers.length());
@@ -52,7 +49,6 @@ public class ArchivosUsuarios {
 
         crearCarpetasUsuario(nombre);
     }
-
 
     public boolean validarUsuario(String nombre, String contraseña) throws IOException {
         nombre = nombre.toUpperCase();
@@ -72,7 +68,6 @@ public class ArchivosUsuarios {
         return false;
     }
 
-
     public boolean usuarioExistente(String nombre) throws IOException {
         nombre = nombre.toUpperCase();
 
@@ -91,13 +86,11 @@ public class ArchivosUsuarios {
         return false;
     }
 
-
     private void crearAdminSiNoExiste() throws IOException {
         if (!usuarioExistente("ADMINISTRADOR")) {
             agregarUsuario("ADMINISTRADOR", "P123/");
         }
     }
-
 
     public boolean hayMasUsuariosQueAdmin() {
         try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "r")) {
@@ -119,7 +112,6 @@ public class ArchivosUsuarios {
         }
     }
 
-
     public void crearCarpetasUsuario(String nombre) {
         File carpetaUsuario = new File("Unidad_Z/" + nombre);
         carpetaUsuario.mkdirs();
@@ -130,7 +122,6 @@ public class ArchivosUsuarios {
             new File(carpetaUsuario, sub).mkdirs();
         }
     }
-
 
     public void listarUsuarios() throws IOException {
         try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "r")) {
@@ -144,13 +135,12 @@ public class ArchivosUsuarios {
         }
     }
 
- 
     public boolean eliminarUsuario(String nombre) throws IOException {
 
         nombre = nombre.toUpperCase();
 
         if (nombre.equals("ADMINISTRADOR")) {
-            return false; // ❌ No se puede eliminar el admin
+            return false; //  No se puede eliminar el admin
         }
 
         File original = archivoUsuarios;
@@ -158,8 +148,7 @@ public class ArchivosUsuarios {
 
         boolean encontrado = false;
 
-        try (RandomAccessFile rusers = new RandomAccessFile(original, "r");
-             RandomAccessFile tempFile = new RandomAccessFile(temp, "rw")) {
+        try (RandomAccessFile rusers = new RandomAccessFile(original, "r"); RandomAccessFile tempFile = new RandomAccessFile(temp, "rw")) {
 
             rusers.seek(0);
 

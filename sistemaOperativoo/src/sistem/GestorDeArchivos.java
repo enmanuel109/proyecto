@@ -34,6 +34,8 @@ public class GestorDeArchivos {
     private File copiadoTemporal = null;
     private Escritorio ventana;
 
+    private File ultimaCarpetaBusqueda = null;
+
     private ReproductorController reproductorController;
 
     public GestorDeArchivos(JTree arbol, Escritorio ventana) {
@@ -816,71 +818,77 @@ public class GestorDeArchivos {
 
         if (termino.isEmpty()) {
             organizar();
+            ultimaCarpetaBusqueda = null; //  limpiar contexto
             return;
         }
 
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode("Resultados");
+        String nombreBase = "Resultados";
 
-        //  ADMINISTRADOR
-        if (esAdmin()) {
-
-            //  Si NO hay carpeta seleccionada → buscar en TODOS LOS USUARIOS
-            if (Escritorio.getCarpetaActual() == null) {
-
-                File unidadZ = new File("Unidad_Z");
-                File[] usuarios = unidadZ.listFiles();
-
-                if (usuarios != null) {
-                    for (File u : usuarios) {
-                        if (u.isDirectory()) {
-                            buscarEnCarpeta(raiz, u, termino);
-                        }
-                    }
-                }
-
-            } //  Si SÍ hay carpeta seleccionada → buscar solo allí
-            else {
-                TreePath sel = arbol.getSelectionPath();
-                if (sel != null) {
-                    File carpeta = fileDesdePath(sel);
-                    if (carpeta != null && carpeta.exists()) {
-                        buscarEnCarpeta(raiz, carpeta, termino);
-                    }
-                }
+        TreePath sel = arbol.getSelectionPath();
+        if (sel != null) {
+            File base = fileDesdePath(sel);
+            if (base != null) {
+                nombreBase = "Resultados - " + base.getName();
             }
+        } else if (ultimaCarpetaBusqueda != null) {
+            nombreBase = "Resultados - " + ultimaCarpetaBusqueda.getName();
+        }
 
-        } //  USUARIO NORMAL
-        else {
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(nombreBase);
+        //  PRIORIDAD MÁXIMA: JTree
+        if (sel != null) {
+            File base = fileDesdePath(sel);
 
-            File usuario = LogIn.CuentaActual;
-            if (usuario == null || !usuario.exists()) {
+            if (base != null && base.exists()) {
+                ultimaCarpetaBusqueda = base; // GUARDAMOS CONTEXTO
+                buscarEnCarpeta(raiz, base, termino);
+                actualizarArbolBusqueda(raiz);
                 return;
-            }
-
-            // Si NO hay carpeta seleccionada → buscar en TODO su usuario
-            if (Escritorio.getCarpetaActual() == null) {
-
-                buscarEnCarpeta(raiz, usuario, termino);
-
-            } // Si SÍ hay carpeta seleccionada → solo buscar allí
-            else {
-
-                TreePath sel = arbol.getSelectionPath();
-                if (sel != null) {
-                    File carpeta = fileDesdePath(sel);
-                    if (carpeta != null && carpeta.exists()) {
-                        buscarEnCarpeta(raiz, carpeta, termino);
-                    }
-                }
             }
         }
 
+        //   SI YA SE HABÍA BUSCADO ANTES → USAR LA MISMA CARPETA
+        if (ultimaCarpetaBusqueda != null && ultimaCarpetaBusqueda.exists()) {
+            buscarEnCarpeta(raiz, ultimaCarpetaBusqueda, termino);
+            actualizarArbolBusqueda(raiz);
+            return;
+        }
+
+        // ÚLTIMA OPCIÓN: TODO
+        if (esAdmin()) {
+            File unidadZ = new File("Unidad_Z");
+            File[] usuarios = unidadZ.listFiles();
+
+            if (usuarios != null) {
+                for (File u : usuarios) {
+                    if (u.isDirectory()) {
+                        buscarEnCarpeta(raiz, u, termino);
+                    }
+                }
+            }
+
+        } else {
+            File usuario = LogIn.CuentaActual;
+            if (usuario != null && usuario.exists()) {
+                buscarEnCarpeta(raiz, usuario, termino);
+            }
+        }
+
+        actualizarArbolBusqueda(raiz);
+    }
+
+    private void actualizarArbolBusqueda(DefaultMutableTreeNode raiz) {
         arbol.setModel(new DefaultTreeModel(raiz));
         arbol.setRootVisible(true);
         arbol.setShowsRootHandles(true);
     }
 
+    public void setUltimaCarpetaBusqueda(File carpeta) {
+        this.ultimaCarpetaBusqueda = carpeta;
+    }
+
     private void buscarEnCarpeta(DefaultMutableTreeNode padre, File carpeta, String termino) {
+
         if (carpeta == null || !carpeta.exists()) {
             return;
         }
@@ -891,6 +899,7 @@ public class GestorDeArchivos {
         }
 
         for (File f : hijos) {
+
             if (f.getName().toLowerCase().contains(termino)) {
                 if (f.isDirectory()) {
                     padre.add(crearNodoRecursivo(f));
@@ -899,10 +908,8 @@ public class GestorDeArchivos {
                 }
             }
 
-            //  BUSCAR EN SUBCARPETAS
             if (f.isDirectory()) {
                 buscarEnCarpeta(padre, f, termino);
-
             }
         }
     }
@@ -1062,10 +1069,10 @@ public class GestorDeArchivos {
                 if (!esAdmin()) {
 
                     File usuario = LogIn.CuentaActual.getCanonicalFile();
-                    File musicaUsuario = new File(usuario, "Musica").getCanonicalFile();
+                    // File musicaUsuario = new File(usuario, "Musica").getCanonicalFile();
 
                     // Si intenta abrir música fuera de su carpeta
-                    if (!archivo.getCanonicalPath().startsWith(musicaUsuario.getCanonicalPath())) {
+                    if (!archivo.getCanonicalPath().startsWith(usuario.getCanonicalPath())) {
                         JOptionPane.showMessageDialog(ventana,
                                 "Solo puedes abrir música desde tu carpeta Musica.");
                         return;

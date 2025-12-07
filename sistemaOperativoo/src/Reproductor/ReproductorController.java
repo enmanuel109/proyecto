@@ -267,13 +267,13 @@ public class ReproductorController {
             File cancionReal = cancion.getCanonicalFile();
 
             // SOLO BLOQUEAR SI NO ES ADMIN
-            if (!esAdmin()) {
+            /*if (!esAdmin()) {
                 if (!cancionReal.getCanonicalPath().startsWith(musicaUsuario.getCanonicalPath())) {
                     JOptionPane.showMessageDialog(vista,
                             "Solo puedes reproducir música desde tu carpeta Música.");
                     return;
                 }
-            }
+            }*/
 
             //  Seleccionar en la lista
             vista.getListaCanciones().setSelectedIndex(index);
@@ -302,14 +302,14 @@ public class ReproductorController {
         try {
 
             //  SOLO bloquear si NO es admin
-            if (!esAdmin()) {
+            /*if (!esAdmin()) {
                 File musica = new File(LogIn.CuentaActual, "Musica").getCanonicalFile();
                 if (!archivo.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
                     JOptionPane.showMessageDialog(vista,
                             "Solo puedes reproducir archivos dentro de tu carpeta Música.");
                     return;
                 }
-            }
+            }*/
 
             recargarPlaylist();
 
