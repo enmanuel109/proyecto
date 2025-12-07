@@ -64,4 +64,5 @@ public class GaleriaImagenesLogica {
         return n.endsWith(".jpg") || n.endsWith(".jpeg")
                 || n.endsWith(".png") || n.endsWith(".gif");
     }
+    
 }

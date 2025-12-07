@@ -8,6 +8,11 @@ package sistem;
  *
  * @author Cantarero
  */
+import GaleriaImagenes.GaleriaImagenesGui;
+import editorTxt.EditorController;
+import editorTxt.EditorGUI;
+import editorTxt.EditorLogica;
+import java.awt.Desktop;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.io.*;
@@ -19,12 +24,17 @@ import java.util.stream.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
+import reproductor.ReproductorController;
+import reproductor.ReproductorGUI;
+import reproductor.ReproductorLogica;
 
 public class GestorDeArchivos {
 
     private final JTree arbol;
     private File copiadoTemporal = null;
     private Escritorio ventana;
+
+    private ReproductorController reproductorController;
 
     public GestorDeArchivos(JTree arbol, Escritorio ventana) {
         this.arbol = arbol;
@@ -51,6 +61,40 @@ public class GestorDeArchivos {
         return null;
     }
 
+    private boolean esZonaProtegida(File f) {
+        if (f == null) {
+            return true;
+        }
+
+        try {
+            String path = f.getCanonicalPath().toLowerCase();
+            String raiz = new File("Unidad_Z").getCanonicalPath().toLowerCase();
+
+            if (path.equals(raiz)) {
+                return true;
+            }
+
+            // ✅ Bloquear carpetas de usuarios (Juan, Pedro...)
+            File padre = f.getParentFile();
+            if (padre != null && padre.getCanonicalPath().equals(raiz)) {
+                return true;
+            }
+
+            // ✅ Bloquear carpetas principales (Documentos, Musica, Imagenes)
+            String nombre = f.getName().toLowerCase();
+            if (nombre.equals("documentos")
+                    || nombre.equals("musica")
+                    || nombre.equals("imagenes")) {
+                return true;
+            }
+
+        } catch (IOException e) {
+            return true;
+        }
+
+        return false;
+    }
+
     //RENOMBRAR
     public boolean renombrarSeleccionado(JFrame parent) throws IOException {
         TreePath sel = arbol.getSelectionPath();
@@ -65,7 +109,7 @@ public class GestorDeArchivos {
         //Obtener solo el nombre del archivo
         String nombreNodo;
         File seleccionado = null;
-       
+
         if (userObj instanceof File) {
             seleccionado = (File) userObj;
             nombreNodo = seleccionado.getName();
@@ -73,8 +117,14 @@ public class GestorDeArchivos {
             JOptionPane.showMessageDialog(parent, "Elemento invalido.");
             return false;
         }
-        
-         if (esNombreProhibidoParaRenombrar(seleccionado)) {
+
+        if (esZonaProtegida(seleccionado)) {
+            JOptionPane.showMessageDialog(parent,
+                    "No puedes renombrar carpetas del sistema.");
+            return false;
+        }
+
+        if (esNombreProhibidoParaRenombrar(seleccionado)) {
             JOptionPane.showMessageDialog(parent, "No puedes Renombrar '" + nombreNodo + "'.");
             return false;
         }
@@ -159,6 +209,11 @@ public class GestorDeArchivos {
                 }
             }
         }
+        if (esZonaProtegida(destinoDir)) {
+            JOptionPane.showMessageDialog(parent,
+                    "No se pueden crear elementos aquí.");
+            return false;
+        }
 
         //usa la carpetas principales
         if (destinoDir == null) {
@@ -219,6 +274,11 @@ public class GestorDeArchivos {
             JOptionPane.showMessageDialog(parent, "Elemento invalido.");
             return false;
         }
+        if (esZonaProtegida(f)) {
+            JOptionPane.showMessageDialog(parent,
+                    "No puedes copiar carpetas del sistema.");
+            return false;
+        }
 
         String nombre = f.getName().toLowerCase();
 
@@ -256,7 +316,11 @@ public class GestorDeArchivos {
         } else {
             destinoDir = seleccionado;
         }
-
+        if (esZonaProtegida(destinoDir)) {
+            JOptionPane.showMessageDialog(parent,
+                    "No se puede pegar en carpetas protegidas.");
+            return false;
+        }
         // Validar carpeta valida
         if (destinoDir == null || !destinoDir.isDirectory()) {
             JOptionPane.showMessageDialog(parent, "Seleccione una carpeta valida.");
@@ -341,8 +405,6 @@ public class GestorDeArchivos {
         }
     }
 
-    
-
     public boolean eliminarSeleccionado(JFrame parent) {
 
         TreePath sel = arbol.getSelectionPath();
@@ -356,6 +418,12 @@ public class GestorDeArchivos {
 
         if (seleccionado == null || !seleccionado.exists()) {
             JOptionPane.showMessageDialog(parent, "Elemento invalido.");
+            return false;
+        }
+
+        if (esZonaProtegida(seleccionado)) {
+            JOptionPane.showMessageDialog(parent,
+                    "No se puede eliminar una carpeta protegida.");
             return false;
         }
 
@@ -389,6 +457,7 @@ public class GestorDeArchivos {
         JOptionPane.showMessageDialog(parent, "Eliminado correctamente.");
         return true;
     }
+
     public static boolean borrarRecursivo(File f) {
         if (f.isDirectory()) {
             File[] hijos = f.listFiles();
@@ -414,7 +483,6 @@ public class GestorDeArchivos {
             return;
         }
 
-        // Archivo o carpeta seleccionada
         File ArcSel = fileDesdePath(sel);
         if (ArcSel == null) {
             return;
@@ -425,11 +493,10 @@ public class GestorDeArchivos {
             return;
         }
 
-        // Encontrar nodo real dentro del arbol
         DefaultMutableTreeNode nodoDir = nodoPorFile(dir);
         if (nodoDir == null) {
             JOptionPane.showMessageDialog(null,
-                    "No se encontro la carpeta en el arbol.");
+                    "No se encontró la carpeta en el árbol.");
             return;
         }
 
@@ -439,8 +506,9 @@ public class GestorDeArchivos {
         modelo.nodeStructureChanged(nodoDir);
 
         SwingUtilities.invokeLater(() -> {
-            arbol.expandPath(new TreePath(nodoDir.getPath()));
-            arbol.setSelectionPath(new TreePath(nodoDir.getPath()));
+            TreePath path = new TreePath(nodoDir.getPath());
+            arbol.expandPath(path);
+            arbol.setSelectionPath(path);
         });
     }
 
@@ -448,9 +516,9 @@ public class GestorDeArchivos {
 
         ArrayList<File> archivos = new ArrayList<>();
 
+        // ✅ Obtener SOLO los File reales del nodo
         for (int i = 0; i < nodo.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) nodo.getChildAt(i);
-
             Object obj = child.getUserObject();
             if (obj instanceof File) {
                 archivos.add((File) obj);
@@ -474,7 +542,8 @@ public class GestorDeArchivos {
                 cmp = new Comparator<File>() {
                     @Override
                     public int compare(File f1, File f2) {
-                        // Primero carpetas
+
+                        // ✅ Carpetas primero
                         if (f1.isDirectory() && !f2.isDirectory()) {
                             return -1;
                         }
@@ -482,9 +551,9 @@ public class GestorDeArchivos {
                             return 1;
                         }
 
-                        // Luego por extensión
                         String ext1 = getExtension(f1.getName());
                         String ext2 = getExtension(f2.getName());
+
                         return ext1.compareToIgnoreCase(ext2);
                     }
                 };
@@ -510,10 +579,15 @@ public class GestorDeArchivos {
 
         Collections.sort(archivos, cmp);
 
+        // ✅ AQUÍ ESTÁ LA CORRECCIÓN REAL
         nodo.removeAllChildren();
 
         for (File f : archivos) {
-            nodo.add(new DefaultMutableTreeNode(f));
+            if (f.isDirectory()) {
+                nodo.add(crearNodoRecursivo(f));   // ✅ Mantiene estructura
+            } else {
+                nodo.add(new DefaultMutableTreeNode(f));
+            }
         }
     }
 
@@ -528,70 +602,193 @@ public class GestorDeArchivos {
     }
 
     public void organizarCompleto() {
+
         TreePath sel = arbol.getSelectionPath();
 
         if (sel == null) {
-            JOptionPane.showMessageDialog(null, "Seleccione una carpeta para organizar.");
+            JOptionPane.showMessageDialog(ventana,
+                    "Seleccione una carpeta para organizar.");
             return;
         }
 
-        File carpetaBase = fileDesdePath(sel);
+        File carpetaSeleccionada = fileDesdePath(sel);
 
-        if (carpetaBase == null || !carpetaBase.isDirectory()) {
-            JOptionPane.showMessageDialog(null, "Seleccione una carpeta válida.");
+        if (carpetaSeleccionada == null || !carpetaSeleccionada.isDirectory()) {
+            JOptionPane.showMessageDialog(ventana,
+                    "Seleccione una carpeta válida.");
             return;
         }
 
-        // Crear carpetas destino
-        File carpetaImagenes = new File(carpetaBase, "Imagenes");
-        File carpetaDocumentos = new File(carpetaBase, "Documentos");
-        File carpetaMusica = new File(carpetaBase, "Musica");
+        File carpetaUsuario = esAdmin()
+                ? carpetaSeleccionada.getParentFile()
+                : LogIn.CuentaActual;
 
-        if (!carpetaImagenes.exists()) {
-            carpetaImagenes.mkdirs();
-        }
-        if (!carpetaDocumentos.exists()) {
-            carpetaDocumentos.mkdirs();
-        }
-        if (!carpetaMusica.exists()) {
-            carpetaMusica.mkdirs();
+        if (carpetaUsuario == null) {
+            JOptionPane.showMessageDialog(ventana,
+                    "No se puede determinar la carpeta del usuario.");
+            return;
         }
 
-        File[] archivos = carpetaBase.listFiles();
+        File carpetaImagenes = new File(carpetaUsuario, "Imagenes");
+        File carpetaDocumentos = new File(carpetaUsuario, "Documentos");
+        File carpetaMusica = new File(carpetaUsuario, "Musica");
+
+        carpetaImagenes.mkdirs();
+        carpetaDocumentos.mkdirs();
+        carpetaMusica.mkdirs();
+
+        File[] archivos = carpetaSeleccionada.listFiles();
         if (archivos == null) {
             return;
         }
+
+        // ✅ Guardar nodos abiertos antes de mover
+        List<TreePath> abiertas = obtenerCarpetasAbiertas();
 
         for (File f : archivos) {
 
             if (f.isDirectory()) {
                 continue;
             }
-            String nombre = f.getName().toLowerCase();
 
+            String nombre = f.getName().toLowerCase();
             File destino = null;
 
-            if (nombre.endsWith(".jpg") || nombre.endsWith(".png") || nombre.endsWith(".jpeg") || nombre.endsWith(".gif")) {
+            if (nombre.endsWith(".jpg") || nombre.endsWith(".png")
+                    || nombre.endsWith(".jpeg") || nombre.endsWith(".gif")) {
+
                 destino = new File(carpetaImagenes, f.getName());
+
             } else if (nombre.endsWith(".mp3") || nombre.endsWith(".wav")) {
+
                 destino = new File(carpetaMusica, f.getName());
-            } else if (nombre.endsWith(".txt") || nombre.endsWith(".pdf") || nombre.endsWith(".docx")) {
+
+            } else if (nombre.endsWith(".txt") || nombre.endsWith(".pdf")
+                    || nombre.endsWith(".docx")) {
+
                 destino = new File(carpetaDocumentos, f.getName());
             }
 
             if (destino != null) {
+
+                destino = obtenerNombreDisponible(destino);
+
                 try {
-                    Files.move(f.toPath(), destino.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    Files.move(f.toPath(), destino.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(ventana,
+                            "Error moviendo: " + f.getName());
                 }
             }
         }
 
-        DefaultTreeModel modelo = (DefaultTreeModel) arbol.getModel();
-        DefaultMutableTreeNode raiz = crearNodoRecursivo(LogIn.CuentaActual);
-        modelo.setRoot(raiz);
-        modelo.reload();
+        // ✅ SOLO refrescar lo necesario
+        refrescarSiEstaAbierto(carpetaSeleccionada);
+        refrescarSiEstaAbierto(carpetaImagenes);
+        refrescarSiEstaAbierto(carpetaDocumentos);
+        refrescarSiEstaAbierto(carpetaMusica);
+
+        // ✅ Restaurar exactamente lo que estaba abierto antes
+        restaurarCarpetasAbiertas(abiertas);
+
+        JOptionPane.showMessageDialog(ventana,
+                "Organización completada correctamente.");
+    }
+
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
+    }
+
+    private File obtenerNombreDisponible(File destino) {
+
+        if (!destino.exists()) {
+            return destino;
+        }
+
+        String nombre = destino.getName();
+        String base;
+        String ext = "";
+
+        int punto = nombre.lastIndexOf('.');
+        if (punto > 0) {
+            base = nombre.substring(0, punto);
+            ext = nombre.substring(punto);
+        } else {
+            base = nombre;
+        }
+
+        int contador = 1;
+        File nuevo;
+
+        do {
+            nuevo = new File(destino.getParent(), base + "_" + contador + ext);
+            contador++;
+        } while (nuevo.exists());
+
+        return nuevo;
+    }
+
+    private void refrescarSiEstaAbierto(File dir) {
+        if (dir == null || !dir.exists()) {
+            return;
+        }
+
+        DefaultMutableTreeNode nodo = nodoPorFile(dir);
+        if (nodo == null) {
+            return;
+        }
+
+        TreePath path = new TreePath(nodo.getPath());
+
+        // ✅ SOLO refresca si el nodo ya estaba ABIERTO
+        if (arbol.isExpanded(path)) {
+            refrescarNodoPorFile(dir);
+        }
+    }
+
+    private File generarDestinoSeguro(File destino) {
+        if (!destino.exists()) {
+            return destino;
+        }
+
+        String nombre = destino.getName();
+        String base = nombre;
+        String ext = "";
+
+        int punto = nombre.lastIndexOf('.');
+        if (punto != -1) {
+            base = nombre.substring(0, punto);
+            ext = nombre.substring(punto);
+        }
+
+        int contador = 1;
+        File nuevo;
+
+        do {
+            nuevo = new File(destino.getParentFile(),
+                    base + "_" + contador + ext);
+            contador++;
+        } while (nuevo.exists());
+
+        return nuevo;
+    }
+
+    private void restaurarCarpetasAbiertas(List<TreePath> abiertas) {
+        for (TreePath p : abiertas) {
+            arbol.expandPath(p);
+        }
+    }
+
+    private List<TreePath> obtenerCarpetasAbiertas() {
+        List<TreePath> abiertas = new ArrayList<>();
+        for (int i = 0; i < arbol.getRowCount(); i++) {
+            if (arbol.isExpanded(i)) {
+                abiertas.add(arbol.getPathForRow(i));
+            }
+        }
+        return abiertas;
     }
 
     //BUSCAR 
@@ -776,6 +973,90 @@ public class GestorDeArchivos {
             return "";
         }
         return nombre.substring(i + 1).toLowerCase();
+    }
+
+    public void abrirAplicacion(JDesktopPane escritorio, JPanel indicadorSub) {
+
+        TreePath sel = arbol.getSelectionPath();
+
+        if (sel == null) {
+            JOptionPane.showMessageDialog(ventana,
+                    "Seleccione un archivo para abrir.");
+            return;
+        }
+
+        File archivo = fileDesdePath(sel);
+
+        if (archivo == null || !archivo.exists() || archivo.isDirectory()) {
+            JOptionPane.showMessageDialog(ventana,
+                    "Seleccione un archivo válido.");
+            return;
+        }
+
+        String nombre = archivo.getName().toLowerCase();
+
+        try {
+
+            // ====================== 🎵 MUSICA ==========================
+            if (nombre.endsWith(".mp3") || nombre.endsWith(".wav")) {
+
+                // ✅ SI AÚN NO EXISTE EL REPRODUCTOR → SE CREA UNA SOLA VEZ
+                if (reproductorController == null) {
+
+                    ReproductorLogica logica = new ReproductorLogica();
+                    ReproductorGUI repro = new ReproductorGUI(logica, indicadorSub);
+
+                    reproductorController = new ReproductorController(logica, repro);
+
+                    escritorio.add(repro);
+                    repro.setVisible(true);
+                    repro.setSelected(true);
+                }
+
+                // ✅ AQUÍ SE ABRE LA CANCIÓN DE FORMA CORRECTA
+                reproductorController.abrirArchivoDesdeExplorador(archivo);
+
+                return;
+            }
+
+            // ====================== 🖼️ IMAGEN ==========================
+            if (nombre.endsWith(".jpg") || nombre.endsWith(".png")
+                    || nombre.endsWith(".jpeg") || nombre.endsWith(".gif")) {
+
+                GaleriaImagenesGui galeria = new GaleriaImagenesGui(indicadorSub);
+
+                escritorio.add(galeria);
+                galeria.setVisible(true);
+                galeria.setSelected(true);
+
+                galeria.mostrarImagenDirecta(archivo);
+                return;
+            }
+
+            // ====================== 📝 TEXTO ==========================
+            if (nombre.endsWith(".txt")) {
+
+                EditorLogica logica = new EditorLogica();
+                EditorGUI editor = new EditorGUI(indicadorSub);
+                EditorController controller = new EditorController(editor, logica);
+
+                escritorio.add(editor);
+                editor.setVisible(true);
+                editor.setSelected(true);
+
+                // ✅ ESTO ES LO QUE TE FALTABA
+                controller.abrirDesdeExplorador(archivo);
+
+                return;
+            }
+
+            JOptionPane.showMessageDialog(ventana,
+                    "Tipo de archivo no compatible.");
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(ventana,
+                    "Error al abrir el archivo:\n" + e.getMessage());
+        }
     }
 
 }

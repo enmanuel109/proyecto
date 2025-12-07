@@ -27,7 +27,7 @@ public class ReproductorController {
     private final Timer timerProgreso;
 
     private ArrayList<File> playlist;
-    
+
     private final boolean actualizandoSlider = false;
 
     public ReproductorController(ReproductorLogica logica, ReproductorGUI vista) {
@@ -43,7 +43,6 @@ public class ReproductorController {
     }
 
     private void initListeners() {
-        int click = -1;
         vista.getBtnPlayPause().addActionListener(e -> manejarPlayPause());
         vista.getBtnReiniciar().addActionListener(e -> manejarReiniciar());
 
@@ -52,8 +51,8 @@ public class ReproductorController {
         vista.getListaCanciones().addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (click == -1) {
-                    int index = vista.getListaCanciones().getSelectedIndex();
+                int index = vista.getListaCanciones().getSelectedIndex();
+                if (index >= 0) {
                     vista.setLabelTitulo(vista.getListaCanciones().getSelectedValue());
                     reproducirDeLista(index);
                 }
@@ -65,38 +64,50 @@ public class ReproductorController {
     }
 
     private void siguienteCancion() {
+
+        if (playlist == null || playlist.isEmpty()) {
+            return;
+        }
+
         JList<String> lista = vista.getListaCanciones();
         int index = lista.getSelectedIndex();
 
-        if (index == playlist.size() - 1) {
+        if (index == -1) {
             index = 0;
-            reproducirDeLista(index);
-            lista.setSelectedIndex(index);
-
+        } else if (index == playlist.size() - 1) {
+            index = 0; // vuelve a la primera
         } else {
-            index = lista.getSelectedIndex() + 1;
-            lista.setSelectedIndex(index);
-            reproducirDeLista(index);
-            System.out.println(index);
+            index++;
         }
+
+        lista.setSelectedIndex(index);
+        lista.ensureIndexIsVisible(index);
+
+        reproducirDeLista(index);
+
         vista.setLabelTitulo(lista.getModel().getElementAt(index));
     }
 
     private void anteriorCancion() {
+
+        if (playlist == null || playlist.isEmpty()) {
+            return;
+        }
+
         JList<String> lista = vista.getListaCanciones();
         int index = lista.getSelectedIndex();
 
-        if (index == 0) {
-            index = 0;
-            reproducirDeLista(index);
-            lista.setSelectedIndex(index);
-
+        if (index <= 0) {
+            index = playlist.size() - 1; 
         } else {
-            index = lista.getSelectedIndex() - 1;
-            lista.setSelectedIndex(index);
-            reproducirDeLista(index);
-            System.out.println(index);
+            index--;
         }
+
+        lista.setSelectedIndex(index);
+        lista.ensureIndexIsVisible(index);
+
+        reproducirDeLista(index);
+
         vista.setLabelTitulo(lista.getModel().getElementAt(index));
     }
 
@@ -194,29 +205,76 @@ public class ReproductorController {
     }
 
     private void reproducirDeLista(int index) {
-    if (playlist == null || index < 0 || index >= playlist.size()) {
-        return;
-    }
 
-    File cancion = playlist.get(index);
-
-    File musica = new File(LogIn.CuentaActual, "Musica");
-
-    try {
-        if (!cancion.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
-            JOptionPane.showMessageDialog(vista,
-                    "Solo puedes reproducir música desde la carpeta Música.");
+        if (playlist == null || index < 0 || index >= playlist.size()) {
             return;
         }
 
-        logica.cargar(cancion);
-        logica.reproducir();
-        vista.mostrarIconoPause();
+        File cancion = playlist.get(index);
+        File musica = new File(LogIn.CuentaActual, "Musica");
 
-    } catch (Exception ex) {
-        ex.printStackTrace();
+        try {
+            if (!cancion.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
+                JOptionPane.showMessageDialog(vista,
+                        "Solo puedes reproducir música desde la carpeta Música.");
+                return;
+            }
+
+            vista.getListaCanciones().setSelectedIndex(index);
+            vista.getListaCanciones().ensureIndexIsVisible(index);
+
+            logica.cargar(cancion);
+            logica.reproducir();
+
+            vista.mostrarIconoPause();
+            vista.setLabelTitulo(cancion.getName());
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(vista,
+                    "No se pudo reproducir la canción seleccionada.");
+        }
+    }
+
+   public void abrirArchivoDesdeExplorador(File archivo) {
+
+    try {
+        File musica = new File(LogIn.CuentaActual, "Musica");
+
+        if (!archivo.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
+            JOptionPane.showMessageDialog(vista,
+                    "Solo puedes reproducir archivos dentro de la carpeta Música.");
+            return;
+        }
+
+        recargarPlaylist();
+
+        int indexEncontrado = -1;
+
+        for (int i = 0; i < playlist.size(); i++) {
+            if (playlist.get(i).getCanonicalPath()
+                    .equals(archivo.getCanonicalPath())) {
+                indexEncontrado = i;
+                break;
+            }
+        }
+
+        if (indexEncontrado == -1) {
+            playlist.add(archivo);
+            DefaultListModel<String> modelo
+                    = (DefaultListModel<String>) vista.getListaCanciones().getModel();
+
+            modelo.addElement(archivo.getName());
+            indexEncontrado = playlist.size() - 1;
+        }
+
+        vista.getListaCanciones().setSelectedIndex(indexEncontrado);
+        vista.getListaCanciones().ensureIndexIsVisible(indexEncontrado);
+
+        reproducirDeLista(indexEncontrado);
+
+    } catch (Exception e) {
         JOptionPane.showMessageDialog(vista,
-                "No se pudo reproducir la canción seleccionada.");
+                "No se pudo abrir el archivo:\n" + archivo.getName());
     }
 }
 }

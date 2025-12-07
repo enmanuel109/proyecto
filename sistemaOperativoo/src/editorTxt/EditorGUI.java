@@ -5,10 +5,14 @@
 package editorTxt;
 
 import java.awt.*;
+import java.io.File;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import sistem.LogIn;
 
 /**
  *

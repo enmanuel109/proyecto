@@ -53,10 +53,14 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import reproductor.ReproductorGUI;
 import reproductor.ReproductorLogica;
 import reproductor.EstadoReproductor;
 import reproductor.ReproductorController;
+import java.util.List;
+import java.util.ArrayList;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -76,11 +80,12 @@ public class Escritorio extends JFrame {
     private ImageIcon iconImg;
     private ImageIcon iconMus;
 
+
     public Escritorio() {
         setTitle("Windows");
         setUndecorated(true);
-        setExtendedState(JFrame.MAXIMIZED_BOTH); 
-        setAlwaysOnTop(true); 
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setAlwaysOnTop(true);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -495,6 +500,11 @@ public class Escritorio extends JFrame {
             }
         });
 
+        btnAbrir.addActionListener(e -> {
+            gestor.abrirAplicacion(escritorio, indicadorSub);
+
+        });
+
         Component[] opciones = menuOrdenar.getComponents();
 
         ((JMenuItem) opciones[0]).addActionListener(new ActionListener() {
@@ -525,10 +535,17 @@ public class Escritorio extends JFrame {
             }
         });
         btnOrganizar.addActionListener(e -> {
-            gestor.organizarCompleto();          // ← Ejecuta lo que ya hacía
-            limpiarCarpetaActual();      // ← Quita la carpeta seleccionada
-            Files.clearSelection();      // ← Quita selección en el JTree
+            new Thread(() -> {
+                gestor.organizarCompleto();
+
+                SwingUtilities.invokeLater(() -> {
+                    limpiarCarpetaActual();
+                    Files.clearSelection();
+                });
+
+            }).start();
         });
+
 // Buscar por texto (txtBuscar)
         txtBuscar.addActionListener(ev -> {
             String q = txtBuscar.getText();
@@ -768,31 +785,25 @@ public class Escritorio extends JFrame {
 
         JInternalFrame frame = new JInternalFrame(
                 modo.equals("CREAR") ? "CREAR CUENTA" : "ELIMINAR CUENTA",
-                false, // no maximizar
-                true, // solo cerrar
-                false, // no minimizar
-                false // no redimensionar
+                false,
+                true,
+                false,
+                false
         );
 
-        frame.setSize(400, 250);
+        frame.setSize(600, 450);
         frame.setLocation(200, 150);
         frame.setLayout(null);
         frame.getContentPane().setBackground(Color.BLACK);
 
         escritorio.add(frame);
 
-        // ==========================
-        // TITULO
-        // ==========================
         JLabel lblTitulo = new JLabel(frame.getTitle(), SwingConstants.CENTER);
         lblTitulo.setBounds(0, 10, 400, 30);
         lblTitulo.setForeground(Color.WHITE);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
         frame.add(lblTitulo);
 
-        // ==========================
-        // USUARIO
-        // ==========================
         JLabel lblUser = new JLabel("Usuario:");
         lblUser.setBounds(50, 60, 100, 25);
         lblUser.setForeground(Color.WHITE);
@@ -802,9 +813,6 @@ public class Escritorio extends JFrame {
         txtUsuario.setBounds(150, 60, 180, 25);
         frame.add(txtUsuario);
 
-        // ==========================
-        // CONTRASEÑA
-        // ==========================
         JLabel lblPass = new JLabel("Contraseña:");
         lblPass.setBounds(50, 100, 100, 25);
         lblPass.setForeground(Color.WHITE);
@@ -814,9 +822,6 @@ public class Escritorio extends JFrame {
         txtContrasena.setBounds(150, 100, 140, 25);
         frame.add(txtContrasena);
 
-        // ==========================
-        // BOTÓN OJO 👁
-        // ==========================
         ImageIcon ojoIcon3 = new ImageIcon("src/IMGS/OJO.png");
         Image imgOjo3 = ojoIcon3.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
         ojoIcon3 = new ImageIcon(imgOjo3);
@@ -915,6 +920,28 @@ public class Escritorio extends JFrame {
         try {
             frame.setSelected(true);
         } catch (Exception ignored) {
+        }
+    }
+
+    private List<TreePath> guardarNodosAbiertos() {
+        List<TreePath> abiertos = new ArrayList<>();
+
+        for (int i = 0; i < Files.getRowCount(); i++) {
+            if (Files.isExpanded(i)) {
+                abiertos.add(Files.getPathForRow(i));
+            }
+        }
+        return abiertos;
+    }
+
+// Vuelve a expandir los nodos que estaban abiertos
+    private void restaurarNodosAbiertos(List<TreePath> abiertos) {
+        if (abiertos == null) {
+            return;
+        }
+
+        for (TreePath p : abiertos) {
+            Files.expandPath(p);
         }
     }
 }

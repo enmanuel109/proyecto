@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.text.*;
+import sistem.LogIn;
 
 /**
  *
@@ -39,7 +40,7 @@ public class EditorLogica {
 
     private File archivoFmt(File archivoTxt) {
         File parentDir = archivoTxt.getParentFile();
-        File fmtDir = new File(parentDir, ".fmt"); 
+        File fmtDir = new File(parentDir, ".fmt");
 
         if (!fmtDir.exists()) {
             fmtDir.mkdirs();
@@ -127,5 +128,16 @@ public class EditorLogica {
             this.fontSize = fontSize;
             this.color = color;
         }
+    }
+
+    public File obtenerDirectorioPermitido() {
+        File usuario = LogIn.CuentaActual;
+
+        /*File documentos = new File(usuario);
+        if (!documentos.exists()) {
+            documentos.mkdirs();
+        }*/
+
+        return usuario;
     }
 }

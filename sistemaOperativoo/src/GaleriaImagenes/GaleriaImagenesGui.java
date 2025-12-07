@@ -178,4 +178,9 @@ public class GaleriaImagenesGui extends JInternalFrame {
             }
         }
     }
+    public void mostrarImagenDirecta(File f) {
+    if (f != null && f.exists()) {
+        mostrarPreview(f);
+    }
+}
 }

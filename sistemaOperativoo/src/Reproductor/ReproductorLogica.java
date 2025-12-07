@@ -12,6 +12,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import javax.sound.sampled.*;
+import javax.swing.JOptionPane;
 import sistem.LogIn;
 
 /**
@@ -31,8 +32,8 @@ public class ReproductorLogica {
     private EstadoReproductor estado = EstadoReproductor.SIN_ARCHIVO;
 
     public ReproductorLogica() {
-        String nombre=LogIn.CuentaActual.getName();
-        carpetaMiMusica = new File("Unidad_Z/"+nombre+"/Musica");
+        String nombre = LogIn.CuentaActual.getName();
+        carpetaMiMusica = new File("Unidad_Z/" + nombre + "/Musica");
         if (!carpetaMiMusica.exists()) {
             carpetaMiMusica.mkdirs();
         }
@@ -249,5 +250,16 @@ public class ReproductorLogica {
             return 0.0;
         }
         return (double) getPosicionMillis() / (double) dur;
+    }
+
+    public void reproducirArchivoDirecto(File archivo) {
+        try {
+            detener();
+            cargar(archivo);   
+            reproducir();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                    "No se pudo reproducir el archivo:\n" + archivo.getName());
+        }
     }
 }

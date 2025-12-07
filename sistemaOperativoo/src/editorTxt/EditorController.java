@@ -24,7 +24,7 @@ public class EditorController {
     private final EditorGUI gui;
     private final EditorLogica logica;
 
-    private final JFileChooser chooser;
+    private JFileChooser chooser;
     private File archivoActual = null;
     private boolean modificado = false;
 
@@ -32,27 +32,41 @@ public class EditorController {
         this.gui = gui;
         this.logica = logica;
 
-        chooser = new JFileChooser();
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.addChoosableFileFilter(new FileNameExtensionFilter("Archivos de texto (.txt)", "txt"));
-
+        inicializarChooser();
         initListeners();
         registrarCambioDocumento();
     }
 
+    // ✅ SOLO PERMITIR ENTRAR AL USUARIO ACTUAL
+    private void inicializarChooser() {
+        File usuario = LogIn.CuentaActual;
+
+        chooser = new JFileChooser(usuario);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileFilter(new FileNameExtensionFilter("Archivos de texto (.txt)", "txt"));
+
+        chooser.setFileView(new javax.swing.filechooser.FileView() {
+            @Override
+            public Boolean isTraversable(File f) {
+                try {
+                    return f.getCanonicalPath().startsWith(usuario.getCanonicalPath());
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        });
+    }
+
     private void registrarCambioDocumento() {
         gui.getAreaTexto().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
             public void insertUpdate(DocumentEvent e) {
                 modificado = true;
             }
 
-            @Override
             public void removeUpdate(DocumentEvent e) {
                 modificado = true;
             }
 
-            @Override
             public void changedUpdate(DocumentEvent e) {
                 modificado = true;
             }
@@ -69,38 +83,22 @@ public class EditorController {
         gui.getBtnColor().addActionListener(e -> cambiarColor());
     }
 
-    private void aplicarEstilo(Style style) {
-        gui.getAreaTexto().setCharacterAttributes(style, false);
-    }
+    // ✅ USADO CUANDO ABRES DESDE EL EXPLORADOR
+    public void abrirDesdeExplorador(File archivo) {
+        try {
+            String texto = logica.leerTxt(archivo);
+            gui.getAreaTexto().setText(texto);
 
-    private void cambiarFuente() {
-        String fuente = (String) gui.getCbFuente().getSelectedItem();
-        if (fuente == null) {
-            return;
-        }
-        Style s = gui.getAreaTexto().addStyle("fuente", null);
-        StyleConstants.setFontFamily(s, fuente);
-        aplicarEstilo(s);
-    }
+            logica.aplicarFormato(archivo, gui.getAreaTexto().getStyledDocument());
 
-    private void cambiarTam() {
-        Integer tam = (Integer) gui.getCbTam().getSelectedItem();
-        if (tam == null) {
-            return;
-        }
-        Style s = gui.getAreaTexto().addStyle("tam", null);
-        StyleConstants.setFontSize(s, tam);
-        aplicarEstilo(s);
-    }
+            archivoActual = archivo;
+            modificado = false;
 
-    private void cambiarColor() {
-        Color c = JColorChooser.showDialog(gui, "Color del texto", Color.BLACK);
-        if (c == null) {
-            return;
+            gui.setTitle("Editor - " + archivo.getName());
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(gui, "Error al abrir archivo desde explorador.");
         }
-        Style s = gui.getAreaTexto().addStyle("color", null);
-        StyleConstants.setForeground(s, c);
-        aplicarEstilo(s);
     }
 
     private boolean confirmarGuardado() {
@@ -109,10 +107,8 @@ public class EditorController {
         }
 
         int opcion = JOptionPane.showConfirmDialog(
-                gui,
-                "¿Deseas guardar los cambios?",
-                "Confirmar",
-                JOptionPane.YES_NO_CANCEL_OPTION
+                gui, "¿Deseas guardar los cambios?",
+                "Confirmar", JOptionPane.YES_NO_CANCEL_OPTION
         );
 
         if (opcion == JOptionPane.CANCEL_OPTION) {
@@ -121,6 +117,7 @@ public class EditorController {
         if (opcion == JOptionPane.YES_OPTION) {
             accionGuardar();
         }
+
         return true;
     }
 
@@ -129,10 +126,10 @@ public class EditorController {
             return;
         }
 
-        gui.getAreaTexto().setDocument(new javax.swing.text.DefaultStyledDocument());
+        gui.getAreaTexto().setText("");
         archivoActual = null;
         modificado = false;
-        gui.setTitle("Editor de texto - Nuevo");
+        gui.setTitle("Editor - Nuevo");
     }
 
     private void accionAbrir() {
@@ -141,68 +138,112 @@ public class EditorController {
         }
 
         if (chooser.showOpenDialog(gui) == JFileChooser.APPROVE_OPTION) {
-            File archivo = chooser.getSelectedFile();
-            try {
-                String texto = logica.leerTxt(archivo);
+            abrirDesdeExplorador(chooser.getSelectedFile());
+        }
+    }
 
-                javax.swing.text.DefaultStyledDocument doc
-                        = new javax.swing.text.DefaultStyledDocument();
+  private void accionGuardar() {
+    try {
+        File usuario = LogIn.CuentaActual;
 
+        JFileChooser chooser = new JFileChooser(usuario);
+
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileFilter(
+                new FileNameExtensionFilter("Archivos de texto (*.txt)", "txt")
+        );
+
+        // ✅ BLOQUEAR SALIDA DEL USUARIO
+        chooser.setFileView(new javax.swing.filechooser.FileView() {
+            @Override
+            public Boolean isTraversable(File f) {
                 try {
-                    doc.insertString(0, texto, null);
-                } catch (javax.swing.text.BadLocationException ex) {
-                    ex.printStackTrace();
+                    return f.getCanonicalPath()
+                                .startsWith(usuario.getCanonicalPath());
+                } catch (Exception e) {
+                    return false;
                 }
-
-                logica.aplicarFormato(archivo, doc);
-
-                gui.getAreaTexto().setDocument(doc);
-
-                archivoActual = archivo;
-                modificado = false;
-                gui.setTitle("Editor de texto - " + archivo.getName());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(gui, "Error al abrir archivo");
             }
+        });
+
+        // ✅ SI YA EXISTÍA UN ARCHIVO → LO SELECCIONA POR DEFECTO
+        if (archivoActual != null) {
+            chooser.setSelectedFile(archivoActual);
         }
-    }
 
-    private void accionGuardar() {
-        try {
-            if (archivoActual == null) {
-                String nombre =JOptionPane.showInputDialog(gui,"Escriba un nombre para el archivo.");
-                String nombreCuenta=LogIn.CuentaActual.getName();
-                guardarEnArchivo(new File("Unidad_Z/"+nombreCuenta+"/Documentos/"+nombre+".txt"));
+        int r = chooser.showSaveDialog(gui);
+        if (r != JFileChooser.APPROVE_OPTION) return;
 
-                JOptionPane.showMessageDialog(gui, "Archivo guardado en "+nombreCuenta+"/Documentos. Se aplicaron los cambios");
+        File archivo = chooser.getSelectedFile();
 
-            } else {
-                guardarEnArchivo(archivoActual);
-                JOptionPane.showMessageDialog(gui, "Archivo guardado correctamente. Se aplicaron los cambios");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(gui, "Error al guardar archivo");
+        // ✅ FORZAR EXTENSIÓN .txt
+        if (!archivo.getName().toLowerCase().endsWith(".txt")) {
+            archivo = new File(
+                    archivo.getParent(),
+                    archivo.getName() + ".txt"
+            );
         }
-    }
 
-    private void guardarEnArchivo(File archivo) {
-        try {
-            String contenido = gui.getAreaTexto().getText();
-            logica.guardarTxt(archivo, contenido);
+        // ✅ SI YA EXISTE → PREGUNTAR
+        if (archivo.exists()) {
+            int resp = JOptionPane.showConfirmDialog(
+                    gui,
+                    "El archivo ya existe.\n¿Desea sobrescribirlo?",
+                    "Confirmación",
+                    JOptionPane.YES_NO_OPTION
+            );
 
-            StyledDocument doc = gui.getAreaTexto().getStyledDocument();
-            logica.guardarFmt(archivo, doc);
-
-            archivoActual = archivo;
-            modificado = false;
-            gui.setTitle("Editor de texto - " + archivo.getName());
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(gui, "Error al guardar .txt");
+            if (resp != JOptionPane.YES_OPTION) return;
         }
+
+        // ✅ GUARDAR TEXTO
+        logica.guardarTxt(archivo, gui.getAreaTexto().getText());
+
+        // ✅ GUARDAR FORMATO
+        logica.guardarFmt(archivo, gui.getAreaTexto().getStyledDocument());
+
+        archivoActual = archivo;
+        modificado = false;
+
+        gui.setTitle("Editor de texto - " + archivo.getName());
+
+        JOptionPane.showMessageDialog(gui, "Archivo guardado correctamente.");
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(gui, "Error al guardar archivo.");
     }
 }
 
+    private void cambiarFuente() {
+        String fuente = (String) gui.getCbFuente().getSelectedItem();
+        if (fuente == null) {
+            return;
+        }
+
+        Style s = gui.getAreaTexto().addStyle("fuente", null);
+        StyleConstants.setFontFamily(s, fuente);
+        gui.getAreaTexto().setCharacterAttributes(s, false);
+    }
+
+    private void cambiarTam() {
+        Integer tam = (Integer) gui.getCbTam().getSelectedItem();
+        if (tam == null) {
+            return;
+        }
+
+        Style s = gui.getAreaTexto().addStyle("tam", null);
+        StyleConstants.setFontSize(s, tam);
+        gui.getAreaTexto().setCharacterAttributes(s, false);
+    }
+
+    private void cambiarColor() {
+        Color c = JColorChooser.showDialog(gui, "Color del texto", Color.BLACK);
+        if (c == null) {
+            return;
+        }
+
+        Style s = gui.getAreaTexto().addStyle("color", null);
+        StyleConstants.setForeground(s, c);
+        gui.getAreaTexto().setCharacterAttributes(s, false);
+    }
+}
