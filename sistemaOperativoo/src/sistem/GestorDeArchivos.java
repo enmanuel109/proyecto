@@ -341,19 +341,7 @@ public class GestorDeArchivos {
         }
     }
 
-    private boolean borrarRecursivo(File f) {
-        if (f.isDirectory()) {
-            File[] hijos = f.listFiles();
-            if (hijos != null) {
-                for (File h : hijos) {
-                    if (!borrarRecursivo(h)) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return f.delete();
-    }
+    
 
     public boolean eliminarSeleccionado(JFrame parent) {
 
@@ -400,6 +388,19 @@ public class GestorDeArchivos {
 
         JOptionPane.showMessageDialog(parent, "Eliminado correctamente.");
         return true;
+    }
+    public static boolean borrarRecursivo(File f) {
+        if (f.isDirectory()) {
+            File[] hijos = f.listFiles();
+            if (hijos != null) {
+                for (File h : hijos) {
+                    if (!borrarRecursivo(h)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return f.delete();
     }
 
     //  ORDENAR 

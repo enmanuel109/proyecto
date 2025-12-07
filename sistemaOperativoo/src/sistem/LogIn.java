@@ -30,7 +30,9 @@ public class LogIn extends ValidacionUsuarios {
 
     public LogIn() {
         frame = new JFrame("Pantalla Completa con Imagen");
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        frame.setUndecorated(true); 
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); 
+        frame.setAlwaysOnTop(true); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(null);
 

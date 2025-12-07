@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 
 /**
@@ -19,14 +21,16 @@ import java.util.ArrayList;
  */
 public class ArchivosUsuarios {
 
-    private RandomAccessFile rusers;
+    private final File archivoUsuarios = new File("Unidad_Z/usuario.usr");
 
     public ArchivosUsuarios() {
         try {
             File carpeta = new File("Unidad_Z");
             carpeta.mkdir();
 
-            rusers = new RandomAccessFile("Unidad_Z/usuario.usr", "rw");
+            if (!archivoUsuarios.exists()) {
+                archivoUsuarios.createNewFile();
+            }
 
             crearAdminSiNoExiste();
         } catch (IOException e) {
@@ -34,52 +38,59 @@ public class ArchivosUsuarios {
         }
     }
 
-    /*
-       FORMATO DEL ARCHIVO usuario.dat
-       [UTF nombre]
-       [UTF password]
-     */
-        public void agregarUsuario(String nombre, String contraseña) throws IOException {
+  
+    public void agregarUsuario(String nombre, String contraseña) throws IOException {
         nombre = nombre.toUpperCase();
 
-        if (usuarioExistente(nombre)) {
-            return;
-        }
+        if (usuarioExistente(nombre)) return;
 
-        rusers.seek(rusers.length());  
-        rusers.writeUTF(nombre);
-        rusers.writeUTF(contraseña);
+        try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "rw")) {
+            rusers.seek(rusers.length());
+            rusers.writeUTF(nombre);
+            rusers.writeUTF(contraseña);
+        }
 
         crearCarpetasUsuario(nombre);
     }
 
+
     public boolean validarUsuario(String nombre, String contraseña) throws IOException {
         nombre = nombre.toUpperCase();
 
-        rusers.seek(0);
+        try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "r")) {
+            rusers.seek(0);
 
-        while (rusers.getFilePointer() < rusers.length()) {
-            String name = rusers.readUTF();
-            String pass = rusers.readUTF();
+            while (rusers.getFilePointer() < rusers.length()) {
+                String name = rusers.readUTF();
+                String pass = rusers.readUTF();
 
-            if (name.equals(nombre) && pass.equals(contraseña)) {
-                return true;
+                if (name.equals(nombre) && pass.equals(contraseña)) {
+                    return true;
+                }
             }
         }
         return false;
     }
+
 
     public boolean usuarioExistente(String nombre) throws IOException {
-        rusers.seek(0);
-        while (rusers.getFilePointer() < rusers.length()) {
-            String name = rusers.readUTF();
-            String pass = rusers.readUTF();
-            if (name.equals(nombre)) {
-                return true;
+        nombre = nombre.toUpperCase();
+
+        try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "r")) {
+            rusers.seek(0);
+
+            while (rusers.getFilePointer() < rusers.length()) {
+                String name = rusers.readUTF();
+                rusers.readUTF();
+
+                if (name.equals(nombre)) {
+                    return true;
+                }
             }
         }
         return false;
     }
+
 
     private void crearAdminSiNoExiste() throws IOException {
         if (!usuarioExistente("ADMINISTRADOR")) {
@@ -87,27 +98,27 @@ public class ArchivosUsuarios {
         }
     }
 
+
     public boolean hayMasUsuariosQueAdmin() {
-        try {
+        try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "r")) {
             rusers.seek(0);
             int contador = 0;
 
             while (rusers.getFilePointer() < rusers.length()) {
+                String nombre = rusers.readUTF();
+                rusers.readUTF();
 
-                String nombre = rusers.readUTF();   
-                rusers.readUTF();                  
-
-                if (!nombre.equals("administrador")) {
+                if (!nombre.equals("ADMINISTRADOR")) {
                     contador++;
                 }
             }
-
-            return (contador > 0);
+            return contador > 0;
 
         } catch (IOException e) {
             return false;
         }
     }
+
 
     public void crearCarpetasUsuario(String nombre) {
         File carpetaUsuario = new File("Unidad_Z/" + nombre);
@@ -116,18 +127,67 @@ public class ArchivosUsuarios {
         String[] subcarpetas = {"Documentos", "Musica", "Imagenes"};
 
         for (String sub : subcarpetas) {
-            File c = new File(carpetaUsuario, sub);
-            c.mkdirs();
+            new File(carpetaUsuario, sub).mkdirs();
         }
     }
 
-    public void listarUsuarios() throws IOException {
-        rusers.seek(0);
 
-        while (rusers.getFilePointer() < rusers.length()) {
-            String nombre = rusers.readUTF();
-            String psw = rusers.readUTF();
-            System.out.println(nombre + " - " + psw);
+    public void listarUsuarios() throws IOException {
+        try (RandomAccessFile rusers = new RandomAccessFile(archivoUsuarios, "r")) {
+            rusers.seek(0);
+
+            while (rusers.getFilePointer() < rusers.length()) {
+                String nombre = rusers.readUTF();
+                String psw = rusers.readUTF();
+                System.out.println(nombre + " - " + psw);
+            }
         }
+    }
+
+ 
+    public boolean eliminarUsuario(String nombre) throws IOException {
+
+        nombre = nombre.toUpperCase();
+
+        if (nombre.equals("ADMINISTRADOR")) {
+            return false; // ❌ No se puede eliminar el admin
+        }
+
+        File original = archivoUsuarios;
+        File temp = new File("Unidad_Z/temp.usr");
+
+        boolean encontrado = false;
+
+        try (RandomAccessFile rusers = new RandomAccessFile(original, "r");
+             RandomAccessFile tempFile = new RandomAccessFile(temp, "rw")) {
+
+            rusers.seek(0);
+
+            while (rusers.getFilePointer() < rusers.length()) {
+
+                String name = rusers.readUTF();
+                String pass = rusers.readUTF();
+
+                if (!name.equals(nombre)) {
+                    tempFile.writeUTF(name);
+                    tempFile.writeUTF(pass);
+                } else {
+                    encontrado = true;
+                }
+            }
+        }
+
+        // Reemplazar archivo
+        Files.move(
+                temp.toPath(),
+                original.toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+        );
+
+        // Borrar carpeta del usuario
+        File carpetaUsuario = new File("Unidad_Z/" + nombre);
+        GestorDeArchivos.borrarRecursivo(carpetaUsuario);
+
+        return encontrado;
     }
 }

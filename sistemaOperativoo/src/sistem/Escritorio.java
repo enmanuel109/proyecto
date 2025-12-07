@@ -70,9 +70,17 @@ public class Escritorio extends JFrame {
     private GestorDeArchivos gestor;
     private static String carpetaActual = null;
 
+    private ImageIcon iconUser;
+    private ImageIcon iconInicio;
+    private ImageIcon iconDoc;
+    private ImageIcon iconImg;
+    private ImageIcon iconMus;
+
     public Escritorio() {
         setTitle("Windows");
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setUndecorated(true);
+        setExtendedState(JFrame.MAXIMIZED_BOTH); 
+        setAlwaysOnTop(true); 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -261,17 +269,36 @@ public class Escritorio extends JFrame {
 
         // Menú emergente
         JPopupMenu menu = new JPopupMenu();
+
         JMenuItem cerrarWindows = new JMenuItem("Cerrar Windows");
         JMenuItem cerrarSesion = new JMenuItem("Cerrar Sesión");
+
+        menu.add(cerrarWindows);
+        menu.add(cerrarSesion);
+
+// ✅ OPCIONES SOLO PARA ADMIN
+        if (esAdmin()) {
+            menu.addSeparator();
+
+            JMenuItem crearCuenta = new JMenuItem("Crear cuenta");
+            JMenuItem eliminarCuenta = new JMenuItem("Eliminar cuenta");
+
+            crearCuenta.addActionListener(e -> abrirFrameAdmin("CREAR"));
+            eliminarCuenta.addActionListener(e -> abrirFrameAdmin("ELIMINAR"));
+
+            menu.add(crearCuenta);
+            menu.add(eliminarCuenta);
+        }
+
         cerrarWindows.addActionListener(e -> System.exit(0));
         cerrarSesion.addActionListener(e -> {
             this.dispose();
             new LogIn();
         });
-        menu.add(cerrarWindows);
-        menu.add(cerrarSesion);
 
-        btnMenu.addActionListener(e -> menu.show(btnMenu, 0, -menu.getPreferredSize().height));
+        btnMenu.addActionListener(e
+                -> menu.show(btnMenu, 0, -menu.getPreferredSize().height)
+        );
 
         // Panel reloj
         JPanel panelReloj = new JPanel(new GridLayout(2, 1));
@@ -365,7 +392,7 @@ public class Escritorio extends JFrame {
         menuOrdenar.add(new JMenuItem("Tamaño"));
         btnOrdenar.addActionListener(e -> menuOrdenar.show(btnOrdenar, 0, btnOrdenar.getHeight()));
 
-        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnEliminar, btnOrganizar,btnAbrir, btnOrdenar};
+        JButton[] botonesTop = {btnCambiarNombre, btnCrear, btnCopiar, btnPegar, btnEliminar, btnOrganizar, btnAbrir, btnOrdenar};
         Color fondoFijoTop = new Color(180, 180, 180);
 
         GridBagConstraints gbcTop = new GridBagConstraints();
@@ -530,70 +557,13 @@ public class Escritorio extends JFrame {
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
         panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // ICONOS
-        ImageIcon iconDoc = new ImageIcon("src/IMGS/Iconodoc.png");
-        ImageIcon iconImg = new ImageIcon("src/IMGS/Iconoimagenes.png");
-        ImageIcon iconMus = new ImageIcon("src/IMGS/IconoMusica.png");
+        iconDoc = cargarIcono("src/IMGS/Iconodoc.png", 20, 20);
+        iconImg = cargarIcono("src/IMGS/Iconoimagenes.png", 20, 20);
+        iconMus = cargarIcono("src/IMGS/IconoMusica.png", 20, 20);
+        iconUser = cargarIcono("src/IMGS/LogoUsers.png", 20, 20);
+        iconInicio = cargarIcono("src/IMGS/IconoInicio.png", 20, 20);
 
-        Image iDoc = iconDoc.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-        Image iImg = iconImg.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-        Image iMus = iconMus.getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-
-        iconDoc = new ImageIcon(iDoc);
-        iconImg = new ImageIcon(iImg);
-        iconMus = new ImageIcon(iMus);
-
-        JButton btnDoc = new JButton("  Documentos", iconDoc);
-        JButton btnImg = new JButton("  Imagenes", iconImg);
-        JButton btnMus = new JButton("  Musica", iconMus);
-
-        btnDoc.setHorizontalAlignment(SwingConstants.LEFT);
-        btnImg.setHorizontalAlignment(SwingConstants.LEFT);
-        btnMus.setHorizontalAlignment(SwingConstants.LEFT);
-
-        btnDoc.setIconTextGap(10);
-        btnImg.setIconTextGap(10);
-        btnMus.setIconTextGap(10);
-        btnDoc.addActionListener(e -> {
-            carpetaActual = "Documentos";
-            cargarSoloCarpeta("Documentos");
-        });
-        btnImg.addActionListener(e -> {
-            carpetaActual = "Imagenes";
-            cargarSoloCarpeta("Imagenes");
-        });
-        btnMus.addActionListener(e -> {
-            carpetaActual = "Musica";
-            cargarSoloCarpeta("Musica");
-        });
-
-        Color fondoFijo = new Color(200, 200, 200);
-
-        for (JButton b : new JButton[]{btnDoc, btnImg, btnMus}) {
-            b.setFocusPainted(false);
-            b.setBorderPainted(false);
-            b.setContentAreaFilled(true);
-            b.setOpaque(true);
-            b.setBackground(fondoFijo);
-            b.setHorizontalAlignment(SwingConstants.LEFT);
-            b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-            b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
-
-            b.addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent evt) {
-                    b.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent evt) {
-                    b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
-                }
-            });
-
-            panelBotones.add(b);
-            panelBotones.add(Box.createVerticalStrut(10));
-        }
+        cargarBotonesLaterales(panelBotones);
 
         JScrollPane scrollBotones = new JScrollPane(panelBotones);
         scrollBotones.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -625,11 +595,18 @@ public class Escritorio extends JFrame {
 
 // Funcion recursivo para crear nodos
     private void cargarArbolCompleto() {
-        File usuario = LogIn.CuentaActual;
 
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
+        File raizArchivo;
 
-        File[] carpetas = usuario.listFiles();
+        if (esAdmin()) {
+            raizArchivo = new File("Unidad_Z");   // ADMIN VE TODO
+        } else {
+            raizArchivo = LogIn.CuentaActual;     // USUARIO VE SOLO SU CARPETA
+        }
+
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(raizArchivo);
+
+        File[] carpetas = raizArchivo.listFiles();
 
         if (carpetas != null) {
             for (File f : carpetas) {
@@ -662,10 +639,19 @@ public class Escritorio extends JFrame {
     }
 
     private void cargarSoloCarpeta(String nombreCarpeta) {
-        File usuario = LogIn.CuentaActual;
-        File carpeta = new File(usuario, nombreCarpeta);
 
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(usuario);
+        File raizArchivo;
+        File carpeta;
+
+        if (esAdmin()) {
+            raizArchivo = new File("Unidad_Z");
+            carpeta = new File(raizArchivo, nombreCarpeta);  // usuario completo
+        } else {
+            raizArchivo = LogIn.CuentaActual;
+            carpeta = new File(raizArchivo, nombreCarpeta);  // documentos / música / imágenes
+        }
+
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(raizArchivo);
         raiz.add(cargarCarpeta(carpeta));
 
         Files.setModel(new DefaultTreeModel(raiz));
@@ -679,5 +665,256 @@ public class Escritorio extends JFrame {
 
     public static String getCarpetaActual() {
         return carpetaActual;
+    }
+
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
+    }
+
+    private void cargarBotonesLaterales(JPanel panelBotones) {
+
+        panelBotones.removeAll();
+
+        // 🔵 BOTÓN INICIO (para todos)
+        JButton btnInicio = new JButton("  Inicio", iconInicio);
+        estilizarBoton(btnInicio);
+        btnInicio.addActionListener(e -> cargarArbolCompleto());
+        panelBotones.add(btnInicio);
+        panelBotones.add(Box.createVerticalStrut(10));
+
+        // 🔵 MODO ADMINISTRADOR: MOSTRAR TODOS LOS USUARIOS
+        if (esAdmin()) {
+
+            File unidadZ = new File("Unidad_Z");
+            File[] usuarios = unidadZ.listFiles();
+
+            if (usuarios != null) {
+                for (File u : usuarios) {
+                    if (u.isDirectory()) {
+
+                        JButton btnUser = new JButton("  " + u.getName(), iconUser);
+                        estilizarBoton(btnUser);
+
+                        btnUser.addActionListener(ev -> {
+                            cargarSoloCarpeta(u.getName());
+                        });
+
+                        panelBotones.add(btnUser);
+                        panelBotones.add(Box.createVerticalStrut(10));
+                    }
+                }
+            }
+
+        } else {
+            // 🔵 BOTONES NORMALES DEL USUARIO
+
+            JButton btnDoc = new JButton("  Documentos", iconDoc);
+            JButton btnImg = new JButton("  Imagenes", iconImg);
+            JButton btnMus = new JButton("  Musica", iconMus);
+
+            estilizarBoton(btnDoc);
+            estilizarBoton(btnImg);
+            estilizarBoton(btnMus);
+
+            btnDoc.addActionListener(e -> cargarSoloCarpeta("Documentos"));
+            btnImg.addActionListener(e -> cargarSoloCarpeta("Imagenes"));
+            btnMus.addActionListener(e -> cargarSoloCarpeta("Musica"));
+
+            panelBotones.add(btnDoc);
+            panelBotones.add(Box.createVerticalStrut(10));
+            panelBotones.add(btnImg);
+            panelBotones.add(Box.createVerticalStrut(10));
+            panelBotones.add(btnMus);
+        }
+
+        panelBotones.repaint();
+        panelBotones.revalidate();
+    }
+
+    private ImageIcon cargarIcono(String ruta, int w, int h) {
+        ImageIcon raw = new ImageIcon(ruta);
+        Image img = raw.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
+        return new ImageIcon(img);
+    }
+
+    private void estilizarBoton(JButton b) {
+        Color fondoFijo = new Color(200, 200, 200);
+
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(true);
+        b.setOpaque(true);
+        b.setBackground(fondoFijo);
+        b.setHorizontalAlignment(SwingConstants.LEFT);
+        b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+        b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
+        b.setIconTextGap(10);
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent evt) {
+                b.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent evt) {
+                b.setBorder(BorderFactory.createLineBorder(new Color(0, 0, 0, 0), 2));
+            }
+        });
+    }
+
+    private void abrirFrameAdmin(String modo) {
+
+        JInternalFrame frame = new JInternalFrame(
+                modo.equals("CREAR") ? "CREAR CUENTA" : "ELIMINAR CUENTA",
+                false, // no maximizar
+                true, // solo cerrar
+                false, // no minimizar
+                false // no redimensionar
+        );
+
+        frame.setSize(400, 250);
+        frame.setLocation(200, 150);
+        frame.setLayout(null);
+        frame.getContentPane().setBackground(Color.BLACK);
+
+        escritorio.add(frame);
+
+        // ==========================
+        // TITULO
+        // ==========================
+        JLabel lblTitulo = new JLabel(frame.getTitle(), SwingConstants.CENTER);
+        lblTitulo.setBounds(0, 10, 400, 30);
+        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        frame.add(lblTitulo);
+
+        // ==========================
+        // USUARIO
+        // ==========================
+        JLabel lblUser = new JLabel("Usuario:");
+        lblUser.setBounds(50, 60, 100, 25);
+        lblUser.setForeground(Color.WHITE);
+        frame.add(lblUser);
+
+        JTextField txtUsuario = new JTextField();
+        txtUsuario.setBounds(150, 60, 180, 25);
+        frame.add(txtUsuario);
+
+        // ==========================
+        // CONTRASEÑA
+        // ==========================
+        JLabel lblPass = new JLabel("Contraseña:");
+        lblPass.setBounds(50, 100, 100, 25);
+        lblPass.setForeground(Color.WHITE);
+        frame.add(lblPass);
+
+        JPasswordField txtContrasena = new JPasswordField();
+        txtContrasena.setBounds(150, 100, 140, 25);
+        frame.add(txtContrasena);
+
+        // ==========================
+        // BOTÓN OJO 👁
+        // ==========================
+        ImageIcon ojoIcon3 = new ImageIcon("src/IMGS/OJO.png");
+        Image imgOjo3 = ojoIcon3.getImage().getScaledInstance(25, 25, Image.SCALE_SMOOTH);
+        ojoIcon3 = new ImageIcon(imgOjo3);
+
+        JButton btnOjo3 = new JButton(ojoIcon3);
+        btnOjo3.setBounds(300, 100, 30, 25);
+        btnOjo3.setFocusPainted(false);
+        btnOjo3.setContentAreaFilled(false);
+        btnOjo3.setBorderPainted(false);
+
+        btnOjo3.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                txtContrasena.setEchoChar((char) 0);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                txtContrasena.setEchoChar('*');
+            }
+        });
+
+        frame.add(btnOjo3);
+
+        // ==========================
+        // BOTÓN PRINCIPAL
+        // ==========================
+        JButton btnAccion = new JButton(modo.equals("CREAR") ? "Crear" : "Eliminar");
+        btnAccion.setBounds(120, 160, 140, 35);
+        frame.add(btnAccion);
+
+        ArchivosUsuarios archivo = new ArchivosUsuarios();
+
+        // ==========================
+        // ACCIÓN BOTÓN
+        // ==========================
+        btnAccion.addActionListener(e -> {
+
+            try {
+                String nombre = txtUsuario.getText().trim().toUpperCase();
+                String contrasena = new String(txtContrasena.getPassword()).trim();
+
+                if (nombre.isEmpty() || contrasena.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "Rellena todos los campos");
+                    return;
+                }
+
+                // ======================
+                // CREAR
+                // ======================
+                if (modo.equals("CREAR")) {
+
+                    if (archivo.usuarioExistente(nombre)) {
+                        JOptionPane.showMessageDialog(frame, "Ese usuario ya existe");
+                        return;
+                    }
+
+                    archivo.agregarUsuario(nombre, contrasena);
+                    JOptionPane.showMessageDialog(frame, "Usuario creado correctamente");
+                    frame.dispose();
+                } // ======================
+                // ELIMINAR
+                // ======================
+                else {
+
+                    if (!archivo.validarUsuario(nombre, contrasena)) {
+                        JOptionPane.showMessageDialog(frame, "Datos incorrectos");
+                        return;
+                    }
+
+                    int r = JOptionPane.showConfirmDialog(
+                            frame,
+                            "¿Seguro que deseas eliminar al usuario?",
+                            "Confirmar",
+                            JOptionPane.YES_NO_OPTION
+                    );
+
+                    if (r != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+
+                    archivo.eliminarUsuario(nombre);
+                    JOptionPane.showMessageDialog(frame, "Usuario eliminado correctamente");
+                    frame.dispose();
+                }
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage());
+            }
+
+        });
+
+        frame.setVisible(true);
+
+        try {
+            frame.setSelected(true);
+        } catch (Exception ignored) {
+        }
     }
 }
