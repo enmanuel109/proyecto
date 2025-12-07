@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
+import javax.swing.JInternalFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
@@ -98,7 +99,7 @@ public class ReproductorController {
         int index = lista.getSelectedIndex();
 
         if (index <= 0) {
-            index = playlist.size() - 1; 
+            index = playlist.size() - 1;
         } else {
             index--;
         }
@@ -112,13 +113,62 @@ public class ReproductorController {
     }
 
     private void recargarPlaylist() {
-        playlist = logica.obtenerCancionesMiMusica();
 
+        playlist = new ArrayList<>();
+
+        try {
+
+            if (esAdmin()) {
+                //  ADMIN: Cargar música de TODOS los usuarios
+                File unidadZ = new File("Unidad_Z");
+                File[] usuarios = unidadZ.listFiles(File::isDirectory);
+
+                if (usuarios != null) {
+                    for (File user : usuarios) {
+                        File carpetaMusica = new File(user, "Musica");
+                        cargarCancionesRecursivo(carpetaMusica);
+                    }
+                }
+
+            } else {
+                // Usuario normal: Solo su música
+                File musica = new File(LogIn.CuentaActual, "Musica");
+                cargarCancionesRecursivo(musica);
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(vista, "Error cargando canciones.");
+        }
+
+        // Actualizar la lista visual
         DefaultListModel<String> modelo = new DefaultListModel<>();
         for (File f : playlist) {
             modelo.addElement(f.getName());
         }
         vista.getListaCanciones().setModel(modelo);
+    }
+
+    private void cargarCancionesRecursivo(File carpeta) {
+
+        if (carpeta == null || !carpeta.exists()) {
+            return;
+        }
+
+        File[] archivos = carpeta.listFiles();
+        if (archivos == null) {
+            return;
+        }
+
+        for (File f : archivos) {
+            if (f.isDirectory()) {
+                cargarCancionesRecursivo(f); //  sigue bajando
+            } else {
+                String nombre = f.getName().toLowerCase();
+                if (nombre.endsWith(".mp3") || nombre.endsWith(".wav")) {
+                    playlist.add(f);
+                }
+            }
+        }
     }
 
     private void manejarAgregarCanciones() {
@@ -211,18 +261,25 @@ public class ReproductorController {
         }
 
         File cancion = playlist.get(index);
-        File musica = new File(LogIn.CuentaActual, "Musica");
 
         try {
-            if (!cancion.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
-                JOptionPane.showMessageDialog(vista,
-                        "Solo puedes reproducir música desde la carpeta Música.");
-                return;
+            File musicaUsuario = new File(LogIn.CuentaActual, "Musica").getCanonicalFile();
+            File cancionReal = cancion.getCanonicalFile();
+
+            // SOLO BLOQUEAR SI NO ES ADMIN
+            if (!esAdmin()) {
+                if (!cancionReal.getCanonicalPath().startsWith(musicaUsuario.getCanonicalPath())) {
+                    JOptionPane.showMessageDialog(vista,
+                            "Solo puedes reproducir música desde tu carpeta Música.");
+                    return;
+                }
             }
 
+            //  Seleccionar en la lista
             vista.getListaCanciones().setSelectedIndex(index);
             vista.getListaCanciones().ensureIndexIsVisible(index);
 
+            //  Reproducir normal
             logica.cargar(cancion);
             logica.reproducir();
 
@@ -235,46 +292,58 @@ public class ReproductorController {
         }
     }
 
-   public void abrirArchivoDesdeExplorador(File archivo) {
-
-    try {
-        File musica = new File(LogIn.CuentaActual, "Musica");
-
-        if (!archivo.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
-            JOptionPane.showMessageDialog(vista,
-                    "Solo puedes reproducir archivos dentro de la carpeta Música.");
-            return;
-        }
-
-        recargarPlaylist();
-
-        int indexEncontrado = -1;
-
-        for (int i = 0; i < playlist.size(); i++) {
-            if (playlist.get(i).getCanonicalPath()
-                    .equals(archivo.getCanonicalPath())) {
-                indexEncontrado = i;
-                break;
-            }
-        }
-
-        if (indexEncontrado == -1) {
-            playlist.add(archivo);
-            DefaultListModel<String> modelo
-                    = (DefaultListModel<String>) vista.getListaCanciones().getModel();
-
-            modelo.addElement(archivo.getName());
-            indexEncontrado = playlist.size() - 1;
-        }
-
-        vista.getListaCanciones().setSelectedIndex(indexEncontrado);
-        vista.getListaCanciones().ensureIndexIsVisible(indexEncontrado);
-
-        reproducirDeLista(indexEncontrado);
-
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(vista,
-                "No se pudo abrir el archivo:\n" + archivo.getName());
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
     }
-}
+
+    public void abrirArchivoDesdeExplorador(File archivo) {
+
+        try {
+
+            //  SOLO bloquear si NO es admin
+            if (!esAdmin()) {
+                File musica = new File(LogIn.CuentaActual, "Musica").getCanonicalFile();
+                if (!archivo.getCanonicalPath().startsWith(musica.getCanonicalPath())) {
+                    JOptionPane.showMessageDialog(vista,
+                            "Solo puedes reproducir archivos dentro de tu carpeta Música.");
+                    return;
+                }
+            }
+
+            recargarPlaylist();
+
+            int indexEncontrado = -1;
+
+            for (int i = 0; i < playlist.size(); i++) {
+                if (playlist.get(i).getCanonicalPath()
+                        .equals(archivo.getCanonicalPath())) {
+                    indexEncontrado = i;
+                    break;
+                }
+            }
+
+            if (indexEncontrado == -1) {
+                playlist.add(archivo);
+                DefaultListModel<String> modelo
+                        = (DefaultListModel<String>) vista.getListaCanciones().getModel();
+
+                modelo.addElement(archivo.getName());
+                indexEncontrado = playlist.size() - 1;
+            }
+
+            vista.getListaCanciones().setSelectedIndex(indexEncontrado);
+            vista.getListaCanciones().ensureIndexIsVisible(indexEncontrado);
+
+            reproducirDeLista(indexEncontrado);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(vista,
+                    "No se pudo abrir el archivo:\n" + archivo.getName());
+        }
+    }
+
+    public JInternalFrame getVista() {
+        return vista;
+    }
 }

@@ -53,12 +53,12 @@ public class ReproductorGUI extends JInternalFrame {
 
     private final JList<String> listaCanciones = new JList<>(new DefaultListModel<>());
 
-    public ReproductorGUI(ReproductorLogica reproductor,JPanel indicadorSub) {
+    public ReproductorGUI(ReproductorLogica reproductor, JPanel indicadorSub) {
         super("Reproductor Musical", true, true, true, true);
         this.reproductor = reproductor;
         setSize(350, 650);
         setMinimumSize(new Dimension(330, 580));
-
+        setDefaultCloseOperation(JInternalFrame.HIDE_ON_CLOSE);
         selector.setFileFilter(filtroWav);
 
         cargarIconos();
@@ -389,4 +389,3 @@ public class ReproductorGUI extends JInternalFrame {
     }
 
 }
-

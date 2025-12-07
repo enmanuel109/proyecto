@@ -37,7 +37,7 @@ public class EditorController {
         registrarCambioDocumento();
     }
 
-    // ✅ SOLO PERMITIR ENTRAR AL USUARIO ACTUAL
+    //  SOLO PERMITIR ENTRAR AL USUARIO ACTUAL
     private void inicializarChooser() {
         File usuario = LogIn.CuentaActual;
 
@@ -83,7 +83,7 @@ public class EditorController {
         gui.getBtnColor().addActionListener(e -> cambiarColor());
     }
 
-    // ✅ USADO CUANDO ABRES DESDE EL EXPLORADOR
+    // USADO CUANDO ABRES DESDE EL EXPLORADOR
     public void abrirDesdeExplorador(File archivo) {
         try {
             String texto = logica.leerTxt(archivo);
@@ -153,7 +153,7 @@ public class EditorController {
                 new FileNameExtensionFilter("Archivos de texto (*.txt)", "txt")
         );
 
-        // ✅ BLOQUEAR SALIDA DEL USUARIO
+        // BLOQUEAR SALIDA DEL USUARIO
         chooser.setFileView(new javax.swing.filechooser.FileView() {
             @Override
             public Boolean isTraversable(File f) {
@@ -166,7 +166,7 @@ public class EditorController {
             }
         });
 
-        // ✅ SI YA EXISTÍA UN ARCHIVO → LO SELECCIONA POR DEFECTO
+        //  SI YA EXISTÍA UN ARCHIVO → LO SELECCIONA POR DEFECTO
         if (archivoActual != null) {
             chooser.setSelectedFile(archivoActual);
         }
@@ -175,8 +175,7 @@ public class EditorController {
         if (r != JFileChooser.APPROVE_OPTION) return;
 
         File archivo = chooser.getSelectedFile();
-
-        // ✅ FORZAR EXTENSIÓN .txt
+        // FORZAR EXTENSIÓN .txt
         if (!archivo.getName().toLowerCase().endsWith(".txt")) {
             archivo = new File(
                     archivo.getParent(),
@@ -184,7 +183,7 @@ public class EditorController {
             );
         }
 
-        // ✅ SI YA EXISTE → PREGUNTAR
+        //  SI YA EXISTE → PREGUNTAR
         if (archivo.exists()) {
             int resp = JOptionPane.showConfirmDialog(
                     gui,
@@ -196,10 +195,10 @@ public class EditorController {
             if (resp != JOptionPane.YES_OPTION) return;
         }
 
-        // ✅ GUARDAR TEXTO
+        //  GUARDAR TEXTO
         logica.guardarTxt(archivo, gui.getAreaTexto().getText());
 
-        // ✅ GUARDAR FORMATO
+        //  GUARDAR FORMATO
         logica.guardarFmt(archivo, gui.getAreaTexto().getStyledDocument());
 
         archivoActual = archivo;

@@ -80,6 +80,13 @@ public class Escritorio extends JFrame {
     private ImageIcon iconImg;
     private ImageIcon iconMus;
 
+    private Icon iconCarpeta;
+    private Icon iconArchivo;
+    private Icon iconMusica;
+    private Icon iconImagen;
+    private Icon iconTexto;
+
+    private JPanel panelBotones;
 
     public Escritorio() {
         setTitle("Windows");
@@ -250,6 +257,12 @@ public class Escritorio extends JFrame {
             }
         });
 
+        iconCarpeta = cargarIcono("src/IMGS/LogoCarpeta.png", 20, 20);
+        iconArchivo = cargarIcono("src/IMGS/Iconodoc.png", 20, 20);
+        iconMusica = cargarIcono("src/IMGS/IconoMusica.png", 20, 20);
+        iconImagen = cargarIcono("src/IMGS/Iconoimagenes.png", 20, 20);
+        iconTexto = cargarIcono("src/IMGS/Iconodoc.png", 20, 20);
+
         ImageIcon iconoCmd = new ImageIcon("src/IMGS/LogoCmd.png");
         Image imgCmd = iconoCmd.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
         iconoCmd = new ImageIcon(imgCmd);
@@ -281,7 +294,7 @@ public class Escritorio extends JFrame {
         menu.add(cerrarWindows);
         menu.add(cerrarSesion);
 
-// ✅ OPCIONES SOLO PARA ADMIN
+//  OPCIONES SOLO PARA ADMIN
         if (esAdmin()) {
             menu.addSeparator();
 
@@ -470,12 +483,13 @@ public class Escritorio extends JFrame {
         btnCrear.addActionListener(e -> {
             try {
                 gestor.crearElemento(this);
+                cargarBotonesLaterales(panelBotones);
+
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error creando: " + ex.getMessage());
             }
         });
-
         btnCambiarNombre.addActionListener(e -> {
             try {
                 gestor.renombrarSeleccionado(this);
@@ -569,7 +583,7 @@ public class Escritorio extends JFrame {
         contenido.add(fila1col2, gbc);
 
         // Fila 2 Columna
-        JPanel panelBotones = new JPanel();
+        panelBotones = new JPanel();
         panelBotones.setBackground(c3);
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
         panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -616,38 +630,30 @@ public class Escritorio extends JFrame {
         File raizArchivo;
 
         if (esAdmin()) {
-            raizArchivo = new File("Unidad_Z");   // ADMIN VE TODO
+            raizArchivo = new File("Unidad_Z");
+            DefaultMutableTreeNode raiz = cargarArbolAdmin(raizArchivo);
+            Files.setModel(new DefaultTreeModel(raiz));
+
         } else {
-            raizArchivo = LogIn.CuentaActual;     // USUARIO VE SOLO SU CARPETA
+            raizArchivo = LogIn.CuentaActual;
+            DefaultMutableTreeNode raiz = cargarCarpetaConArchivos(raizArchivo);
+            Files.setModel(new DefaultTreeModel(raiz));
         }
 
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(raizArchivo);
-
-        File[] carpetas = raizArchivo.listFiles();
-
-        if (carpetas != null) {
-            for (File f : carpetas) {
-                if (f.isDirectory()) {
-                    raiz.add(cargarCarpeta(f));
-                }
-            }
-        }
-
-        Files.setModel(new DefaultTreeModel(raiz));
         Files.setRootVisible(true);
+        Files.setShowsRootHandles(true);
     }
 
-    private DefaultMutableTreeNode cargarCarpeta(File carpeta) {
+    private DefaultMutableTreeNode cargarCarpetaConArchivos(File archivo) {
 
-        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(carpeta);
+        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(archivo);
 
-        File[] lista = carpeta.listFiles();
-        if (lista != null) {
-            for (File f : lista) {
-                if (f.isDirectory()) {
-                    nodo.add(cargarCarpeta(f));
-                } else {
-                    nodo.add(new DefaultMutableTreeNode(f));
+        if (archivo.isDirectory()) {
+            File[] hijos = archivo.listFiles();
+
+            if (hijos != null) {
+                for (File f : hijos) {
+                    nodo.add(cargarCarpetaConArchivos(f)); // carpetas y archivos
                 }
             }
         }
@@ -655,25 +661,88 @@ public class Escritorio extends JFrame {
         return nodo;
     }
 
-    private void cargarSoloCarpeta(String nombreCarpeta) {
+    private DefaultMutableTreeNode cargarCarpetaSoloCarpetas(File carpeta) {
 
-        File raizArchivo;
-        File carpeta;
+        DefaultMutableTreeNode nodo = new DefaultMutableTreeNode(carpeta);
 
-        if (esAdmin()) {
-            raizArchivo = new File("Unidad_Z");
-            carpeta = new File(raizArchivo, nombreCarpeta);  // usuario completo
-        } else {
-            raizArchivo = LogIn.CuentaActual;
-            carpeta = new File(raizArchivo, nombreCarpeta);  // documentos / música / imágenes
+        File[] hijos = carpeta.listFiles();
+
+        if (hijos != null) {
+            for (File f : hijos) {
+                if (f.isDirectory()) {
+                    nodo.add(cargarCarpetaSoloCarpetas(f)); // SOLO carpetas
+                }
+            }
         }
 
-        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(raizArchivo);
-        raiz.add(cargarCarpeta(carpeta));
+        return nodo;
+    }
 
-        Files.setModel(new DefaultTreeModel(raiz));
+    private DefaultMutableTreeNode cargarArbolAdmin(File unidadZ) {
+
+        DefaultMutableTreeNode raiz = new DefaultMutableTreeNode(unidadZ);
+        File[] hijos = unidadZ.listFiles();
+
+        if (hijos != null) {
+            for (File f : hijos) {
+                if (f.isDirectory()) {
+                    //  SOLO carpetas (usuarios) en el primer nivel
+                    raiz.add(cargarCarpetaConArchivos(f));
+                }
+            }
+        }
+
+        return raiz;
+    }
+
+    private void cargarSoloCarpeta(String nombreCarpeta) {
+
+        File raizCarga;
+
+        //  SI ES ADMIN → BUSCAR EN Unidad_Z
+        if (esAdmin()) {
+            File unidad = new File("Unidad_Z");
+
+            if (!unidad.exists()) {
+                JOptionPane.showMessageDialog(this,
+                        "No existe la carpeta Unidad_Z.");
+                return;
+            }
+
+            raizCarga = unidad;
+        } 
+        else {
+            File usuario = LogIn.CuentaActual;
+
+            if (usuario == null) {
+                JOptionPane.showMessageDialog(this,
+                        "No hay usuario activo.");
+                return;
+            }
+
+            File carpeta = new File(usuario, nombreCarpeta);
+
+            if (!carpeta.exists()) {
+                JOptionPane.showMessageDialog(this,
+                        "La carpeta " + nombreCarpeta + " no existe.");
+                return;
+            }
+
+            raizCarga = carpeta; 
+        }
+
+        //  CARGAR TODO CON ARCHIVOS Y CARPETAS
+        DefaultMutableTreeNode raiz = cargarCarpetaConArchivos(raizCarga);
+        DefaultTreeModel modelo = new DefaultTreeModel(raiz);
+
+        Files.setModel(modelo);
         Files.setRootVisible(true);
         Files.setShowsRootHandles(true);
+
+        // SOLO EL USUARIO CAMBIA LA CARPETA ACTUAL
+        if (!esAdmin()) {
+            setCarpetaActual(nombreCarpeta);
+        }
     }
 
     public void limpiarCarpetaActual() {
@@ -682,6 +751,10 @@ public class Escritorio extends JFrame {
 
     public static String getCarpetaActual() {
         return carpetaActual;
+    }
+
+    public void setCarpetaActual(String nombreCarpeta) {
+        carpetaActual = nombreCarpeta;
     }
 
     private boolean esAdmin() {
@@ -693,14 +766,14 @@ public class Escritorio extends JFrame {
 
         panelBotones.removeAll();
 
-        // 🔵 BOTÓN INICIO (para todos)
+        // BOTÓN INICIO (SIEMPRE PRIMERO)
         JButton btnInicio = new JButton("  Inicio", iconInicio);
         estilizarBoton(btnInicio);
         btnInicio.addActionListener(e -> cargarArbolCompleto());
         panelBotones.add(btnInicio);
-        panelBotones.add(Box.createVerticalStrut(10));
+        panelBotones.add(Box.createVerticalStrut(15));
 
-        // 🔵 MODO ADMINISTRADOR: MOSTRAR TODOS LOS USUARIOS
+        //  MODO ADMINISTRADOR
         if (esAdmin()) {
 
             File unidadZ = new File("Unidad_Z");
@@ -714,7 +787,7 @@ public class Escritorio extends JFrame {
                         estilizarBoton(btnUser);
 
                         btnUser.addActionListener(ev -> {
-                            cargarSoloCarpeta(u.getName());
+                            cargarUsuarioAdmin(u.getName());
                         });
 
                         panelBotones.add(btnUser);
@@ -723,30 +796,126 @@ public class Escritorio extends JFrame {
                 }
             }
 
-        } else {
-            // 🔵 BOTONES NORMALES DEL USUARIO
-
-            JButton btnDoc = new JButton("  Documentos", iconDoc);
-            JButton btnImg = new JButton("  Imagenes", iconImg);
-            JButton btnMus = new JButton("  Musica", iconMus);
-
-            estilizarBoton(btnDoc);
-            estilizarBoton(btnImg);
-            estilizarBoton(btnMus);
-
-            btnDoc.addActionListener(e -> cargarSoloCarpeta("Documentos"));
-            btnImg.addActionListener(e -> cargarSoloCarpeta("Imagenes"));
-            btnMus.addActionListener(e -> cargarSoloCarpeta("Musica"));
-
-            panelBotones.add(btnDoc);
-            panelBotones.add(Box.createVerticalStrut(10));
-            panelBotones.add(btnImg);
-            panelBotones.add(Box.createVerticalStrut(10));
-            panelBotones.add(btnMus);
+            panelBotones.revalidate();
+            panelBotones.repaint();
+            return; // IMPORTANTE: el admin NO entra al resto
         }
 
-        panelBotones.repaint();
+        //  USUARIO NORMAL — BOTONES FIJOS
+        JButton btnDoc = new JButton("  Documentos", iconDoc);
+        JButton btnImg = new JButton("  Imagenes", iconImg);
+        JButton btnMus = new JButton("  Musica", iconMus);
+
+        estilizarBoton(btnDoc);
+        estilizarBoton(btnImg);
+        estilizarBoton(btnMus);
+
+        btnDoc.addActionListener(e -> cargarSoloCarpeta("Documentos"));
+        btnImg.addActionListener(e -> cargarSoloCarpeta("Imagenes"));
+        btnMus.addActionListener(e -> cargarSoloCarpeta("Musica"));
+
+        panelBotones.add(btnDoc);
+        panelBotones.add(Box.createVerticalStrut(10));
+        panelBotones.add(btnImg);
+        panelBotones.add(Box.createVerticalStrut(10));
+        panelBotones.add(btnMus);
+        panelBotones.add(Box.createVerticalStrut(15));
+
+        // RESTO DE ARCHIVOS Y CARPETAS
+        File usuario = LogIn.CuentaActual;
+
+        File[] archivos = usuario.listFiles();
+        if (archivos != null) {
+            for (File f : archivos) {
+
+                String nombre = f.getName();
+
+                // NO repetir principales
+                if (nombre.equalsIgnoreCase("Documentos")
+                        || nombre.equalsIgnoreCase("Imagenes")
+                        || nombre.equalsIgnoreCase("Musica")) {
+                    continue;
+                }
+
+                Icon icono = obtenerIconoPorArchivo(f);
+                JButton btnExtra = new JButton("  " + nombre, icono);
+                estilizarBoton(btnExtra);
+
+                btnExtra.addActionListener(e -> {
+                    cargarDesdeArchivoDirecto(f);
+                });
+
+                panelBotones.add(btnExtra);
+                panelBotones.add(Box.createVerticalStrut(10));
+            }
+        }
+
         panelBotones.revalidate();
+        panelBotones.repaint();
+    }
+
+    private Icon obtenerIconoPorArchivo(File f) {
+
+        String nombre = f.getName().toLowerCase();
+
+        if (f.isDirectory()) {
+            return iconCarpeta;
+        }
+
+        if (nombre.endsWith(".mp3") || nombre.endsWith(".wav")) {
+            return iconMusica;
+        }
+
+        if (nombre.endsWith(".jpg") || nombre.endsWith(".png")
+                || nombre.endsWith(".jpeg") || nombre.endsWith(".gif")) {
+            return iconImagen;
+        }
+
+        if (nombre.endsWith(".txt") || nombre.endsWith(".pdf")
+                || nombre.endsWith(".docx")) {
+            return iconTexto;
+        }
+
+        return iconArchivo; // cualquier otro archivo
+    }
+
+    private void cargarDesdeArchivoDirecto(File archivo) {
+
+        if (!archivo.exists()) {
+            return;
+        }
+
+        DefaultMutableTreeNode raiz;
+
+        if (archivo.isDirectory()) {
+            raiz = cargarCarpetaConArchivos(archivo);
+        } else {
+            raiz = new DefaultMutableTreeNode(archivo);
+        }
+
+        DefaultTreeModel modelo = new DefaultTreeModel(raiz);
+        Files.setModel(modelo);
+        Files.setRootVisible(true);
+        Files.setShowsRootHandles(true);
+    }
+
+    private void cargarUsuarioAdmin(String nombreUsuario) {
+
+        File unidadZ = new File("Unidad_Z");
+        File user = new File(unidadZ, nombreUsuario);
+
+        if (!user.exists() || !user.isDirectory()) {
+            JOptionPane.showMessageDialog(this,
+                    "El usuario " + nombreUsuario + " no existe.");
+            return;
+        }
+
+        DefaultMutableTreeNode raiz = cargarCarpetaConArchivos(user);
+        DefaultTreeModel modelo = new DefaultTreeModel(raiz);
+
+        Files.setModel(modelo);
+        Files.setRootVisible(true);
+        Files.setShowsRootHandles(true);
     }
 
     private ImageIcon cargarIcono(String ruta, int w, int h) {
@@ -846,18 +1015,12 @@ public class Escritorio extends JFrame {
 
         frame.add(btnOjo3);
 
-        // ==========================
-        // BOTÓN PRINCIPAL
-        // ==========================
         JButton btnAccion = new JButton(modo.equals("CREAR") ? "Crear" : "Eliminar");
         btnAccion.setBounds(120, 160, 140, 35);
         frame.add(btnAccion);
 
         ArchivosUsuarios archivo = new ArchivosUsuarios();
 
-        // ==========================
-        // ACCIÓN BOTÓN
-        // ==========================
         btnAccion.addActionListener(e -> {
 
             try {
@@ -869,9 +1032,7 @@ public class Escritorio extends JFrame {
                     return;
                 }
 
-                // ======================
                 // CREAR
-                // ======================
                 if (modo.equals("CREAR")) {
 
                     if (archivo.usuarioExistente(nombre)) {
@@ -882,9 +1043,8 @@ public class Escritorio extends JFrame {
                     archivo.agregarUsuario(nombre, contrasena);
                     JOptionPane.showMessageDialog(frame, "Usuario creado correctamente");
                     frame.dispose();
-                } // ======================
+                } 
                 // ELIMINAR
-                // ======================
                 else {
 
                     if (!archivo.validarUsuario(nombre, contrasena)) {
@@ -944,4 +1104,5 @@ public class Escritorio extends JFrame {
             Files.expandPath(p);
         }
     }
+
 }
