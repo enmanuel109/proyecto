@@ -1077,14 +1077,14 @@ public class Escritorio extends JFrame {
 
         escritorio.add(frame);
 
-        // ================== TÍTULO ==================
+        //  TÍTULO 
         JLabel lblTitulo = new JLabel(frame.getTitle(), SwingConstants.CENTER);
         lblTitulo.setForeground(Color.WHITE);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(20, 10, 10, 10));
         frame.add(lblTitulo, BorderLayout.NORTH);
 
-        // ================== FORMULARIO ==================
+        //  FORMULARIO 
         JPanel panelForm = new JPanel(new GridBagLayout());
         panelForm.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -1105,7 +1105,7 @@ public class Escritorio extends JFrame {
         JPasswordField txtContrasena = new JPasswordField();
         txtContrasena.setPreferredSize(new Dimension(220, 30));
 
-        // ===== OJO =====
+        //  OJO 
         ImageIcon ojoIcon = new ImageIcon(
                 new ImageIcon("src/IMGS/OJO.png").getImage().getScaledInstance(22, 22, Image.SCALE_SMOOTH)
         );
@@ -1125,7 +1125,7 @@ public class Escritorio extends JFrame {
             }
         });
 
-        // ===== POSICIONES EN GRID =====
+        //  POSICIONES EN GRID 
         gbc.gridx = 0;
         gbc.gridy = 0;
         panelForm.add(lblUser, gbc);
@@ -1145,7 +1145,7 @@ public class Escritorio extends JFrame {
 
         frame.add(panelForm, BorderLayout.CENTER);
 
-        // ================== BOTÓN ==================
+        //  BOTÓN 
         JButton btnAccion = new JButton(modo.equals("CREAR") ? "Crear" : "Eliminar");
         btnAccion.setPreferredSize(new Dimension(160, 40));
         btnAccion.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -1159,7 +1159,7 @@ public class Escritorio extends JFrame {
 
         frame.add(panelBoton, BorderLayout.SOUTH);
 
-        // ================== LÓGICA ==================
+        //  LÓGICA 
         ArchivosUsuarios archivo = new ArchivosUsuarios();
 
         btnAccion.addActionListener(e -> {

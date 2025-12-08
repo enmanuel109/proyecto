@@ -20,10 +20,10 @@ public class GaleriaImagenesLogica {
 
     public GaleriaImagenesLogica() {
 
-        // ✅ SI ES ADMIN → TODA LA UNIDAD_Z
+        // SI ES ADMIN → TODA LA UNIDAD_Z
         if (esAdmin()) {
             carpetaImagenesBase = new File("Unidad_Z");
-        } // ✅ SI ES USUARIO NORMAL → SOLO SU CARPETA IMAGENES
+        } //  SI ES USUARIO NORMAL → SOLO SU CARPETA IMAGENES
         else {
             File usuario = LogIn.CuentaActual;
             carpetaImagenesBase = new File(usuario, "Imagenes");
@@ -34,7 +34,7 @@ public class GaleriaImagenesLogica {
         }
     }
 
-    // ✅ OBTENER IMÁGENES SEGÚN EL ROL
+    // OBTENER IMÁGENES SEGÚN EL ROL
     public List<File> obtenerImagenes() {
         List<File> lista = new ArrayList<>();
 
@@ -46,10 +46,10 @@ public class GaleriaImagenesLogica {
         return lista;
     }
 
-    // ✅ COPIA SOLO PARA USUARIO NORMAL
+    // COPIA SOLO PARA USUARIO NORMAL
     public void importarImagen(File origen) throws IOException {
 
-        // ❌ ADMIN NO IMPORTA A CARPETA ÚNICA
+        //  ADMIN NO IMPORTA A CARPETA ÚNICA
         if (esAdmin()) {
             throw new IOException("El administrador no puede importar imágenes aquí.");
         }
@@ -69,7 +69,7 @@ public class GaleriaImagenesLogica {
         Files.copy(origen.toPath(), destino.toPath());
     }
 
-    // ✅ BUSCAR IMÁGENES EN TODA LA ESTRUCTURA
+    //  BUSCAR IMÁGENES EN TODA LA ESTRUCTURA
     private void buscarImagenesRecursivo(File carpeta, List<File> lista) {
 
         if (carpeta == null || !carpeta.exists()) {

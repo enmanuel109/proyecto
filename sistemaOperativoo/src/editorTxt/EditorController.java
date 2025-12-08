@@ -60,7 +60,7 @@ public class EditorController {
             });
 
         } else {
-            // ✅ USUARIO NORMAL → SOLO SU CARPETA
+            // USUARIO NORMAL, SOLO SU CARPETA
             File usuario = LogIn.CuentaActual;
 
             chooser = new JFileChooser(usuario);
@@ -180,7 +180,7 @@ public class EditorController {
                     new FileNameExtensionFilter("Archivos de texto (*.txt)", "txt")
             );
 
-            // ✅ BLOQUEO DE SALIDA SEGÚN ROL
+            //  BLOQUEO DE SALIDA SEGÚN ROL
             chooser.setFileView(new javax.swing.filechooser.FileView() {
                 @Override
                 public Boolean isTraversable(File f) {
@@ -211,7 +211,7 @@ public class EditorController {
                 );
             }
 
-            // ✅ CONFIRMAR SI EXISTE
+            //  CONFIRMAR SI EXISTE
             if (archivo.exists()) {
                 int resp = JOptionPane.showConfirmDialog(
                         gui,
@@ -225,7 +225,7 @@ public class EditorController {
                 }
             }
 
-            // ✅ GUARDAR TEXTO + FORMATO
+            //  GUARDAR TEXTO + FORMATO
             logica.guardarTxt(archivo, gui.getAreaTexto().getText());
             logica.guardarFmt(archivo, gui.getAreaTexto().getStyledDocument());
 

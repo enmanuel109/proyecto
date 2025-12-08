@@ -61,11 +61,11 @@ public class GaleriaImagenesGui extends JInternalFrame {
             }
         });
 
-        // ===== ICONOS =====
+        //  ICONOS 
         iconIzquierda = cargarIcono("/IMGS/flechaderecha.png", 45);
         iconDerecha = cargarIcono("/IMGS/flechaIzquierda.png", 45);
 
-        // ===== PANEL SUPERIOR =====
+        //  PANEL SUPERIOR 
         JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER));
         top.setOpaque(false);
 
@@ -81,7 +81,7 @@ public class GaleriaImagenesGui extends JInternalFrame {
         top.add(btnImportar);
         add(top, BorderLayout.NORTH);
 
-        // ===== TARJETA CENTRAL =====
+        //  TARJETA CENTRAL 
         JPanel card = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -110,7 +110,7 @@ public class GaleriaImagenesGui extends JInternalFrame {
         card.add(lblImgBig, BorderLayout.CENTER);
         add(card, BorderLayout.CENTER);
 
-        // ===== PANEL INFERIOR =====
+        //  PANEL INFERIOR 
         JPanel bottom = new JPanel(new BorderLayout());
         bottom.setOpaque(false);
 
@@ -149,7 +149,7 @@ public class GaleriaImagenesGui extends JInternalFrame {
         bottom.add(miniPanel, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
 
-        // ===== CARGAR IMÁGENES =====
+        //  CARGAR IMÁGENES 
         imagenes.clear();
         imagenes.addAll(logica.obtenerImagenes());
         refrescarPestañas();
@@ -158,13 +158,12 @@ public class GaleriaImagenesGui extends JInternalFrame {
             mostrarPreview(imagenes.get(0));
         }
 
-        // ===== EVENTOS =====
+        //  EVENTOS 
         btnIzq.addActionListener(e -> mover(-1));
         btnDer.addActionListener(e -> mover(1));
         btnImportar.addActionListener(e -> importar());
     }
 
-    // =========================================================
     private void mover(int dir) {
         int max = imagenes.size() - 4;
         if (max < 0) {
