@@ -13,7 +13,7 @@ import guiLoginNexo.PanelLogin;
 import guiRegistroNexo.PanelRegistro;
 import java.awt.CardLayout;
 import java.awt.Component;
-import javax.swing.JFrame;
+import java.awt.Dimension;
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 import javax.swing.event.InternalFrameAdapter;
@@ -53,38 +53,39 @@ public class ManagerPrincipal extends JInternalFrame {
     private final ControllerUsuario controllerUsuario;
 
     public ManagerPrincipal(JPanel indNexus) {
+        super("NEXO", true, true, true, true);
         instance = this;
 
-        
         controllerUsuario = NexoGeneral.getControllerUsuario();
 
-        setTitle("NEXO");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JInternalFrame.DISPOSE_ON_CLOSE);
+
         setSize(1500, 800);
-        setResizable(false);
+        setMinimumSize(new Dimension(1499, 799));
+        setResizable(true);
 
         super.addInternalFrameListener(new InternalFrameAdapter() {
+            @Override
+            public void internalFrameActivated(InternalFrameEvent e) {
+                indNexus.setVisible(true);
+            }
 
-        @Override
-        public void internalFrameActivated(InternalFrameEvent e) {
-            indNexus.setVisible(true);
-        }
+            @Override
+            public void internalFrameDeactivated(InternalFrameEvent e) {
+                indNexus.setVisible(false);
+            }
 
-        @Override
-        public void internalFrameDeactivated(InternalFrameEvent e) {
-            indNexus.setVisible(false);
-        }
+            @Override
+            public void internalFrameClosing(InternalFrameEvent e) {
+                indNexus.setVisible(false);
+            }
 
-        @Override
-        public void internalFrameClosing(InternalFrameEvent e) {
-            indNexus.setVisible(false);
-        }
+            @Override
+            public void internalFrameClosed(InternalFrameEvent e) {
+                indNexus.setVisible(false);
+            }
+        });
 
-        @Override
-        public void internalFrameClosed(InternalFrameEvent e) {
-            indNexus.setVisible(false);
-        }
-    });
         cardLayout = new CardLayout();
         cards = new JPanel(cardLayout);
 
@@ -111,11 +112,10 @@ public class ManagerPrincipal extends JInternalFrame {
         cards.add(panelInteracciones, CARD_INTERACTIONS);
 
         setContentPane(cards);
-
     }
 
     public void mostrarInteracciones() {
-        setResizable(true);
+        setMinimumSize(new Dimension(850, 800));
         panelInteracciones.refrescarBusqueda();
         cardLayout.show(cards, CARD_INTERACTIONS);
     }
@@ -173,7 +173,8 @@ public class ManagerPrincipal extends JInternalFrame {
     }
 
     public void mostrarPanelUserPosts() {
-        setResizable(true);
+
+        setMinimumSize(new Dimension(850, 800));
         cardLayout.show(cards, CARD_USER_POSTS);
     }
 
@@ -182,7 +183,7 @@ public class ManagerPrincipal extends JInternalFrame {
     }
 
     public void mostrarUExacto() {
-        setResizable(true);
+        setMinimumSize(new Dimension(850, 800));
         panelUExacto.mostrarMensajeInicial();
         cardLayout.show(cards, CARD_SEARCH_U);
     }
@@ -192,27 +193,27 @@ public class ManagerPrincipal extends JInternalFrame {
     }
 
     public void mostrarLogin() {
+        setSize(1500, 800);
+        setMinimumSize(new Dimension(1499, 799));
         panelLogin.actualizarCampos();
         cardLayout.show(cards, CARD_LOGIN);
-        setSize(1500, 800);
-        setResizable(false);
     }
 
     public void mostrarRegistro() {
+        setSize(1500, 800);
+        setMinimumSize(new Dimension(1499, 799));
         panelRegistro.reiniciarCampos();
         cardLayout.show(cards, CARD_REGISTRO);
-        setSize(1500, 800);
-        setResizable(false);
     }
 
     public void mostrarBusquedad() {
-        setResizable(true);
+        setMinimumSize(new Dimension(850, 800));
         panelBusquedad.refrescarBusqueda();
         cardLayout.show(cards, CARD_SEARCH);
     }
 
     public void mostrarFeed() {
-        setResizable(true);
+        setMinimumSize(new Dimension(850, 800));
         if (panelFeed != null) {
             panelFeed.refrescarFeed();
         }
@@ -228,12 +229,12 @@ public class ManagerPrincipal extends JInternalFrame {
     }
 
     public void mostrarNuevoPost() {
-        setResizable(true);
+        setMinimumSize(new Dimension(850, 800));
         cardLayout.show(cards, CARD_NEW_POST);
     }
 
     public void mostrarBuscarUsuario() {
-        setResizable(true);
+        setMinimumSize(new Dimension(850, 800));
         cardLayout.show(cards, CARD_SEARCH_USERS);
         panelBuscarUsuario.onBuscar();
     }

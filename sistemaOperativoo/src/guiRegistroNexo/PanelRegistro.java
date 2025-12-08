@@ -12,7 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import sharedContentNexo.NexoMessageDialog;
+import sistem.LogIn;
 
 public class PanelRegistro extends JPanel {
 
@@ -39,10 +41,13 @@ public class PanelRegistro extends JPanel {
     private File archivoOrigenFoto;
     private String rutaImgDestino;
 
+    private JFileChooser chooser;
+
     public PanelRegistro() {
         controllerEntrar = NexoGeneral.getControllerUsuario();
         background = new ImageIcon(getClass().getResource("crearCuenta.png")).getImage();
         setLayout(null);
+        inicializarChooserFoto();
         inicializarComponentes();
     }
 
@@ -202,16 +207,15 @@ public class PanelRegistro extends JPanel {
         add(btnVolver);
 
         btnSeleccionarFoto.addActionListener(e -> {
-            JFileChooser fc = new JFileChooser();
-            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 
-                archivoOrigenFoto = fc.getSelectedFile();
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+
+                archivoOrigenFoto = chooser.getSelectedFile();
 
                 Image img = new ImageIcon(archivoOrigenFoto.getAbsolutePath()).getImage();
                 imgPreview.setImage(img);
 
                 rutaImgDestino = null;
-
             }
         });
 
@@ -401,7 +405,59 @@ public class PanelRegistro extends JPanel {
         txtNombreCompleto.setText("");
         txtPassword.setText("");
         txtUsername.setText("");
-        archivoOrigenFoto=null;
+        archivoOrigenFoto = null;
+    }
+
+    private void inicializarChooserFoto() {
+
+        if (esAdmin()) {
+
+            File unidadZ = new File("Unidad_Z");
+
+            chooser = new JFileChooser(unidadZ);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter("Imágenes", "jpg", "png", "jpeg", "gif")
+            );
+
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(unidadZ.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            });
+
+        } else {
+            File usuario = LogIn.CuentaActual;
+
+            chooser = new JFileChooser(usuario);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter("Imágenes", "jpg", "png", "jpeg", "gif")
+            );
+
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(usuario.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            });
+        }
+    }
+
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
     }
 
 }

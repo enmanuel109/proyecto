@@ -7,7 +7,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import sharedContentNexo.NexoMessageDialog;
+import sistem.LogIn;
 
 public class GuiNuevoNexo extends JPanel {
 
@@ -23,8 +25,12 @@ public class GuiNuevoNexo extends JPanel {
 
     private ControllerNexo controllerNexo;
 
+    private JFileChooser chooser;
+
     public GuiNuevoNexo() {
         controllerNexo = modelosNexo.NexoGeneral.getControllerNexo();
+
+        inicializarChooserImagen();
 
         setLayout(new BorderLayout());
         setBackground(BG_MAIN);
@@ -147,14 +153,71 @@ public class GuiNuevoNexo extends JPanel {
     }
 
     private void cargarImagen() {
-        JFileChooser fc = new JFileChooser();
-        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File img = fc.getSelectedFile();
+
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+
+            File img = chooser.getSelectedFile();
+
             rutaImagenSeleccionada = img.getAbsolutePath();
 
             ImageIcon base = new ImageIcon(rutaImagenSeleccionada);
             Image scaled = base.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
+
             lblPreview.setIcon(new ImageIcon(scaled));
         }
     }
+
+    private void inicializarChooserImagen() {
+
+        if (esAdmin()) {
+
+            File unidadZ = new File("Unidad_Z");
+
+            chooser = new JFileChooser(unidadZ);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter("Imágenes", "jpg", "png", "jpeg", "gif")
+            );
+
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(unidadZ.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            });
+
+        } else {
+            // USUARIO NORMAL: SOLO SU CARPETA
+            File usuario = LogIn.CuentaActual;
+
+            chooser = new JFileChooser(usuario);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter("Imágenes", "jpg", "png", "jpeg", "gif")
+            );
+
+            chooser.setFileView(new javax.swing.filechooser.FileView() {
+                @Override
+                public Boolean isTraversable(File f) {
+                    try {
+                        return f.getCanonicalPath()
+                                .startsWith(usuario.getCanonicalPath());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            });
+        }
+    }
+
+    private boolean esAdmin() {
+        return LogIn.CuentaActual != null
+                && LogIn.CuentaActual.getName().equalsIgnoreCase("ADMINISTRADOR");
+    }
+
 }
