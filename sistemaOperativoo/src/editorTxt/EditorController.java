@@ -71,8 +71,7 @@ public class EditorController {
                 @Override
                 public Boolean isTraversable(File f) {
                     try {
-                        return f.getCanonicalPath()
-                                .startsWith(usuario.getCanonicalPath());
+                        return f.getCanonicalPath().startsWith(usuario.getCanonicalPath());
                     } catch (Exception e) {
                         return false;
                     }

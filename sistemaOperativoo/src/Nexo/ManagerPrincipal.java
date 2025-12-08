@@ -16,6 +16,8 @@ import java.awt.Component;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 import modelosNexo.NexoGeneral;
 import modelosNexo.UsuarioActual;
 import sharedContentNexo.NexoConfirmDialog;
@@ -50,9 +52,10 @@ public class ManagerPrincipal extends JInternalFrame {
     private final PanelInteracciones panelInteracciones;
     private final ControllerUsuario controllerUsuario;
 
-    public ManagerPrincipal() {
+    public ManagerPrincipal(JPanel indNexus) {
         instance = this;
 
+        
         controllerUsuario = NexoGeneral.getControllerUsuario();
 
         setTitle("NEXO");
@@ -60,6 +63,28 @@ public class ManagerPrincipal extends JInternalFrame {
         setSize(1500, 800);
         setResizable(false);
 
+        super.addInternalFrameListener(new InternalFrameAdapter() {
+
+        @Override
+        public void internalFrameActivated(InternalFrameEvent e) {
+            indNexus.setVisible(true);
+        }
+
+        @Override
+        public void internalFrameDeactivated(InternalFrameEvent e) {
+            indNexus.setVisible(false);
+        }
+
+        @Override
+        public void internalFrameClosing(InternalFrameEvent e) {
+            indNexus.setVisible(false);
+        }
+
+        @Override
+        public void internalFrameClosed(InternalFrameEvent e) {
+            indNexus.setVisible(false);
+        }
+    });
         cardLayout = new CardLayout();
         cards = new JPanel(cardLayout);
 

@@ -5,6 +5,7 @@
 package sistem;
 
 import GaleriaImagenes.GaleriaImagenesGui;
+import Nexo.ManagerPrincipal;
 import editorTxt.EditorController;
 import editorTxt.EditorGUI;
 import editorTxt.EditorLogica;
@@ -89,6 +90,7 @@ public class Escritorio extends JFrame {
     private Icon iconTexto;
 
     private JPanel panelBotones;
+
 
     public Escritorio() {
         setTitle("Windows");
@@ -175,6 +177,12 @@ public class Escritorio extends JFrame {
         indCmd.setBounds(1000, 60, 50, 4);
         indCmd.setVisible(false);
         barraTareas.add(indCmd);
+
+        JPanel indNexus = new JPanel();
+        indNexus.setBackground(Color.LIGHT_GRAY);
+        indNexus.setBounds(1080, 60, 50, 4);
+        indNexus.setVisible(false);
+        barraTareas.add(indNexus);
 
         btnCarpeta.addActionListener(e -> {
             indCarpeta.setVisible(true);
@@ -268,21 +276,18 @@ public class Escritorio extends JFrame {
         btnNexo.setBorderPainted(false);
         btnNexo.setBounds(1080, 6, 50, 50);
         barraTareas.add(btnNexo);
-        /*btnNexo.addActionListener(e -> {
+        btnNexo.addActionListener(e -> {
             try {
-                EditorLogica logica = new EditorLogica();
-                EditorGUI gui = new EditorGUI(indDoc);
-                EditorController controller = new EditorController(gui, logica);
-                indDoc.setVisible(true);
+                ManagerPrincipal manager = new ManagerPrincipal(indNexus);
 
-                escritorio.add(gui);
-                gui.setVisible(true);
-                gui.setSelected(true);
+                escritorio.add(manager);
+                manager.setVisible(true);
+                manager.setSelected(true);
 
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        });*/
+        });
 
         iconCarpeta = cargarIcono("src/IMGS/LogoCarpeta.png", 20, 20);
         iconArchivo = cargarIcono("src/IMGS/IconoArchivo.png", 20, 20);
