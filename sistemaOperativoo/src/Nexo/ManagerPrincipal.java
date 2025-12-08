@@ -14,6 +14,7 @@ import guiRegistroNexo.PanelRegistro;
 import java.awt.CardLayout;
 import java.awt.Component;
 import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 import modelosNexo.NexoGeneral;
 import modelosNexo.UsuarioActual;
@@ -21,7 +22,7 @@ import sharedContentNexo.NexoConfirmDialog;
 import sharedContentNexo.NexoMessageDialog;
 import sharedContentNexo.SideBar;
 
-public class ManagerPrincipal extends JFrame {
+public class ManagerPrincipal extends JInternalFrame {
 
     private static ManagerPrincipal instance;
 
@@ -58,7 +59,6 @@ public class ManagerPrincipal extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1500, 800);
         setResizable(false);
-        setLocationRelativeTo(null);
 
         cardLayout = new CardLayout();
         cards = new JPanel(cardLayout);
